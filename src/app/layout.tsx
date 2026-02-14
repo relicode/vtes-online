@@ -1,13 +1,11 @@
+import InitColorSchemeScript from '@mui/material/InitColorSchemeScript'
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Inter } from 'next/font/google'
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-})
+import ThemeRegistry from '$/components/ThemeRegistry'
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const inter = Inter({
+  variable: '--font-inter',
   subsets: ['latin'],
 })
 
@@ -16,14 +14,17 @@ export const metadata: Metadata = {
   description: 'Play VTES - Online',
 }
 
-export default function RootLayout({
+const RootLayout = ({
   children,
 }: Readonly<{
   children: React.ReactNode
-}>) {
-  return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>{children}</body>
-    </html>
-  )
-}
+}>) => (
+  <html lang="en" suppressHydrationWarning>
+    <body className={inter.variable}>
+      <InitColorSchemeScript attribute="class" />
+      <ThemeRegistry>{children}</ThemeRegistry>
+    </body>
+  </html>
+)
+
+export default RootLayout
