@@ -1,73 +1,132 @@
-type Discipline =
-  | 'Animalism'
-  | 'Auspex'
-  | 'Celerity'
-  | 'Dominate'
-  | 'Fortitude'
-  | 'Obfuscate'
-  | 'Potence'
-  | 'Presence'
-  | 'Protean'
-  | 'Thaumaturgy'
-  | 'Necromancy'
-  | 'Obtenebration'
-  | 'Serpentis'
-  | 'Chimerstry'
-  | 'Dementation'
-  | 'Quietus'
-  | 'Vicissitude'
-  | 'Valeren'
-  | 'Spiritus'
-  | 'Temporis'
-  | 'Abombwe'
-  | 'Sanguinus'
-  | 'Thanatosis'
-  | 'Daimoinon'
-  | 'Melpominee'
-  | 'Mytherceria'
-  | 'Obeah'
-  | 'Visceratika'
-
 type Clan =
-  | 'Brujah'
-  | 'Gangrel'
-  | 'Malkavian'
-  | 'Nosferatu'
-  | 'Toreador'
-  | 'Tremere'
-  | 'Ventrue'
-  | 'Lasombra'
-  | 'Tzimisce'
-  | 'Assamite'
-  | 'Followers of Set'
-  | 'Giovanni'
-  | 'Ravnos'
-  | 'Baali'
-  | 'Daughters of Cacophony'
-  | 'Harbingers of Skulls'
-  | 'Kiasyd'
-  | 'Nagaraja'
-  | 'Salubri'
-  | 'Samedi'
-  | 'True Brujah'
-  | 'Gargoyle'
+  | 'Abomination'
   | 'Ahrimane'
+  | 'Akunanse'
+  | 'Assamite'
+  | 'Avenger'
+  | 'Baali'
   | 'Blood Brother'
+  | 'Brujah'
+  | 'Brujah antitribu'
   | 'Caitiff'
+  | 'Daughter of Cacophony'
+  | 'Defender'
+  | 'Follower of Set'
+  | 'Gangrel'
+  | 'Gangrel antitribu'
+  | 'Gargoyle'
+  | 'Giovanni'
+  | 'Guruhi'
+  | 'Harbinger of Skulls'
+  | 'Innocent'
+  | 'Ishtarri'
+  | 'Judge'
+  | 'Kiasyd'
+  | 'Lasombra'
+  | 'Malkavian'
+  | 'Malkavian antitribu'
+  | 'Martyr'
+  | 'Nagaraja'
+  | 'Nosferatu'
+  | 'Nosferatu antitribu'
+  | 'Osebo'
   | 'Pander'
+  | 'Ravnos'
+  | 'Redeemer'
+  | 'Salubri'
+  | 'Salubri antitribu'
+  | 'Samedi'
+  | 'Toreador'
+  | 'Toreador antitribu'
+  | 'Tremere'
+  | 'Tremere antitribu'
+  | 'True Brujah'
+  | 'Tzimisce'
+  | 'Ventrue'
+  | 'Ventrue antitribu'
+  | 'Visionary'
 
-type Sect = 'Camarilla' | 'Sabbat' | 'Independent' | 'Laibon' | 'Anarch'
+// Lowercase = inferior, UPPERCASE = superior
+type Discipline =
+  | 'abo'
+  | 'ABO'
+  | 'ani'
+  | 'ANI'
+  | 'aus'
+  | 'AUS'
+  | 'cel'
+  | 'CEL'
+  | 'chi'
+  | 'CHI'
+  | 'dai'
+  | 'DAI'
+  | 'def'
+  | 'dem'
+  | 'DEM'
+  | 'dom'
+  | 'DOM'
+  | 'flight'
+  | 'for'
+  | 'FOR'
+  | 'inn'
+  | 'jud'
+  | 'maleficia'
+  | 'mar'
+  | 'mel'
+  | 'MEL'
+  | 'myt'
+  | 'MYT'
+  | 'nec'
+  | 'NEC'
+  | 'obe'
+  | 'OBE'
+  | 'obf'
+  | 'OBF'
+  | 'obt'
+  | 'OBT'
+  | 'pot'
+  | 'POT'
+  | 'pre'
+  | 'PRE'
+  | 'pro'
+  | 'PRO'
+  | 'qui'
+  | 'QUI'
+  | 'red'
+  | 'san'
+  | 'SAN'
+  | 'ser'
+  | 'SER'
+  | 'spi'
+  | 'SPI'
+  | 'striga'
+  | 'tem'
+  | 'TEM'
+  | 'tha'
+  | 'THA'
+  | 'thn'
+  | 'THN'
+  | 'val'
+  | 'VAL'
+  | 'ven'
+  | 'vic'
+  | 'VIC'
+  | 'vin'
+  | 'vis'
+  | 'VIS'
 
 type CryptCard = {
   id: string
   name: string
   type: 'crypt'
-  clan: Clan
+  clans: Clan[]
   capacity: number
   disciplines: Discipline[]
   group: number
-  sect: Sect
-  text: string
+  cardText: string
+  url: string
+  title?: string
+  adv?: boolean
 }
 
 type LibraryCardType =
@@ -75,10 +134,12 @@ type LibraryCardType =
   | 'Action Modifier'
   | 'Ally'
   | 'Combat'
+  | 'Conviction'
   | 'Equipment'
   | 'Event'
   | 'Master'
   | 'Political Action'
+  | 'Power'
   | 'Reaction'
   | 'Retainer'
 
@@ -86,14 +147,15 @@ type LibraryCard = {
   id: string
   name: string
   type: 'library'
-  cardType: LibraryCardType
-  clan?: Clan
-  discipline?: Discipline
+  types: LibraryCardType[]
+  cardText: string
+  url: string
+  clans?: Clan[]
+  disciplines?: Discipline[]
   poolCost?: number
   bloodCost?: number
-  text: string
 }
 
 type Card = CryptCard | LibraryCard
 
-export type { Card, Clan, CryptCard, Discipline, LibraryCard, LibraryCardType, Sect }
+export type { Card, Clan, CryptCard, Discipline, LibraryCard, LibraryCardType }

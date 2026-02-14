@@ -30,7 +30,7 @@ const PlayerHand = ({ hand }: PlayerHandProps) => (
               <Typography variant="body2">{card?.name ?? cardId}</Typography>
               {card && (
                 <Chip
-                  label={card.type === 'crypt' ? 'Crypt' : card.cardType}
+                  label={card.type === 'crypt' ? 'Crypt' : card.types.join(' / ')}
                   size="small"
                   sx={{ mt: 0.5 }}
                   variant="outlined"

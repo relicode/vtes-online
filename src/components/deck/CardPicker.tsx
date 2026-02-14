@@ -25,8 +25,10 @@ const CardPicker = ({ onAddCard }: CardPickerProps) => {
   const [tab, setTab] = useState(0)
   const [search, setSearch] = useState('')
 
+  const MAX_VISIBLE = 50
   const cards: Card[] = tab === 0 ? getCryptCards() : getLibraryCards()
   const filtered = search ? cards.filter((c) => c.name.toLowerCase().includes(search.toLowerCase())) : cards
+  const visible = filtered.slice(0, MAX_VISIBLE)
 
   return (
     <Box>
@@ -46,7 +48,7 @@ const CardPicker = ({ onAddCard }: CardPickerProps) => {
         sx={{ mb: 1 }}
       />
       <List dense sx={{ maxHeight: 400, overflow: 'auto' }}>
-        {filtered.map((card) => (
+        {visible.map((card) => (
           <ListItem
             key={card.id}
             secondaryAction={
@@ -62,14 +64,14 @@ const CardPicker = ({ onAddCard }: CardPickerProps) => {
                 <Stack component="span" direction="row" spacing={0.5} useFlexGap sx={{ flexWrap: 'wrap', mt: 0.5 }}>
                   {card.type === 'crypt' ? (
                     <>
-                      <Chip label={card.clan} size="small" variant="outlined" />
+                      <Chip label={card.clans.join(' / ')} size="small" variant="outlined" />
                       <Chip label={`Cap: ${card.capacity}`} size="small" variant="outlined" />
                       <Chip label={`G${card.group}`} size="small" variant="outlined" />
                     </>
                   ) : (
                     <>
-                      <Chip label={card.cardType} size="small" variant="outlined" />
-                      {card.discipline && <Chip label={card.discipline} size="small" variant="outlined" />}
+                      <Chip label={card.types.join(' / ')} size="small" variant="outlined" />
+                      {card.disciplines && <Chip label={card.disciplines.join(', ')} size="small" variant="outlined" />}
                     </>
                   )}
                 </Stack>
@@ -80,6 +82,11 @@ const CardPicker = ({ onAddCard }: CardPickerProps) => {
         {filtered.length === 0 && (
           <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
             No cards found.
+          </Typography>
+        )}
+        {filtered.length > MAX_VISIBLE && (
+          <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+            Showing {MAX_VISIBLE} of {filtered.length} results. Type to narrow down.
           </Typography>
         )}
       </List>
