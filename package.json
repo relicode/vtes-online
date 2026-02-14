@@ -1,0 +1,35 @@
+{
+  "name": "vtes-online",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "format": "concurrently --max-processes 1 --prefix-colors auto 'npm:format:eslint' 'npm:format:prettier'",
+    "format:eslint": "eslint --fix",
+    "format:prettier": "prettier --write .",
+    "lint": "eslint",
+    "lint:eslint": "eslint",
+    "lint:prettier": "prettier --check .",
+    "lint:typescript": "tsc --noEmit",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "babel-plugin-react-compiler": "1.0.0",
+    "concurrently": "^9.2.1",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "prettier": "^3.8.1",
+    "typescript": "^5"
+  }
+}
