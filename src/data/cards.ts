@@ -2,6 +2,8 @@ import type { Card, Clan, CryptCard, Discipline, LibraryCard, LibraryCardType } 
 import rawCrypt from './crypt.json'
 import rawLibrary from './library.json'
 
+const localUrl = (url: string) => '/cards/' + url.split('/').pop()
+
 const parseCost = (s: string): number => {
   const n = Number(s)
   return Number.isNaN(n) ? Infinity : n
@@ -16,7 +18,7 @@ const cryptCards: CryptCard[] = rawCrypt.map((c) => ({
   disciplines: c.disciplines as Discipline[],
   group: c.group ?? 0,
   cardText: c.cardText,
-  url: c.url,
+  url: localUrl(c.url),
   ...(c.title ? { title: c.title } : {}),
   ...(c.adv ? { adv: c.adv } : {}),
 }))
@@ -27,7 +29,7 @@ const libraryCards: LibraryCard[] = rawLibrary.map((c) => ({
   type: 'library' as const,
   types: c.types as LibraryCardType[],
   cardText: c.card_text,
-  url: c.url,
+  url: localUrl(c.url),
   ...(c.clans ? { clans: c.clans as Clan[] } : {}),
   ...(c.disciplines ? { disciplines: c.disciplines as Discipline[] } : {}),
   ...(c.pool_cost ? { poolCost: parseCost(c.pool_cost) } : {}),
