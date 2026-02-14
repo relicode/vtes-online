@@ -1,7 +1,5 @@
 'use client'
 
-import { useState } from 'react'
-
 import AddIcon from '@mui/icons-material/Add'
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
@@ -14,6 +12,7 @@ import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
+import { useState } from 'react'
 
 import { getCryptCards, getLibraryCards } from '$/data/cards'
 import type { Card } from '$/types/card'
@@ -27,9 +26,7 @@ const CardPicker = ({ onAddCard }: CardPickerProps) => {
   const [search, setSearch] = useState('')
 
   const cards: Card[] = tab === 0 ? getCryptCards() : getLibraryCards()
-  const filtered = search
-    ? cards.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
-    : cards
+  const filtered = search ? cards.filter((c) => c.name.toLowerCase().includes(search.toLowerCase())) : cards
 
   return (
     <Box>

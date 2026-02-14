@@ -12,15 +12,26 @@ const getGame = async (gameId: string): Promise<ActionResult<GamePublicState>> =
   return { success: true, data: JSON.parse(raw) as GamePublicState }
 }
 
-const createGame = async (name: string, creatorUserId: string, creatorName: string): Promise<ActionResult<GamePublicState>> => {
+const MAX_NAME_LENGTH = 200
+
+const createGame = async (
+  name: string,
+  creatorUserId: string,
+  creatorName: string
+): Promise<ActionResult<GamePublicState>> => {
+  const trimmedName = name.trim()
+  if (!trimmedName || trimmedName.length > MAX_NAME_LENGTH) {
+    return { success: false, error: 'Game name is required and must be under 200 characters' }
+  }
+
   const gameId = crypto.randomUUID()
   const now = new Date().toISOString()
 
   const game: GamePublicState = {
     id: gameId,
-    name,
+    name: trimmedName,
     status: 'waiting',
-    players: [{ userId: creatorUserId, name: creatorName, poolSize: 30, vampiresInPlay: 0 }],
+    players: [{ userId: creatorUserId, name: creatorName.trim(), poolSize: 30, vampiresInPlay: 0 }],
     currentTurn: creatorUserId,
     turnNumber: 0,
     createdAt: now,
@@ -35,11 +46,12 @@ const createGame = async (name: string, creatorUserId: string, creatorName: stri
   return { success: true, data: game }
 }
 
-const joinGame = async (
-  gameId: string,
-  userId: string,
-  playerName: string,
-): Promise<ActionResult<GamePublicState>> => {
+const joinGame = async (gameId: string, userId: string, playerName: string): Promise<ActionResult<GamePublicState>> => {
+  const trimmedPlayerName = playerName.trim()
+  if (!trimmedPlayerName || trimmedPlayerName.length > MAX_NAME_LENGTH) {
+    return { success: false, error: 'Player name is required and must be under 200 characters' }
+  }
+
   const raw = await redis.get(`game:${gameId}`)
   if (!raw) {
     return { success: false, error: 'Game not found' }
@@ -54,21 +66,14 @@ const joinGame = async (
     return { success: false, error: 'Already in game' }
   }
 
-  game.players.push({ userId, name: playerName, poolSize: 30, vampiresInPlay: 0 })
+  game.players.push({ userId, name: trimmedPlayerName, poolSize: 30, vampiresInPlay: 0 })
 
-  await redis
-    .pipeline()
-    .set(`game:${gameId}`, JSON.stringify(game))
-    .sadd(`game:${gameId}:players`, userId)
-    .exec()
+  await redis.pipeline().set(`game:${gameId}`, JSON.stringify(game)).sadd(`game:${gameId}:players`, userId).exec()
 
   return { success: true, data: game }
 }
 
-const getPlayerState = async (
-  gameId: string,
-  userId: string,
-): Promise<ActionResult<PlayerPrivateState>> => {
+const getPlayerState = async (gameId: string, userId: string): Promise<ActionResult<PlayerPrivateState>> => {
   const raw = await redis.get(`game:${gameId}:player:${userId}`)
   if (!raw) {
     return { success: false, error: 'Player state not found' }
@@ -76,10 +81,7 @@ const getPlayerState = async (
   return { success: true, data: JSON.parse(raw) as PlayerPrivateState }
 }
 
-const initPlayerState = async (
-  gameId: string,
-  userId: string,
-): Promise<ActionResult<PlayerPrivateState>> => {
+const initPlayerState = async (gameId: string, userId: string): Promise<ActionResult<PlayerPrivateState>> => {
   const state: PlayerPrivateState = {
     userId,
     gameId,
@@ -98,8 +100,13 @@ const initPlayerState = async (
 const updatePlayerState = async (
   gameId: string,
   userId: string,
-  updates: Partial<Omit<PlayerPrivateState, 'userId' | 'gameId'>>,
+  callerUserId: string,
+  updates: Partial<Omit<PlayerPrivateState, 'userId' | 'gameId'>>
 ): Promise<ActionResult<PlayerPrivateState>> => {
+  if (userId !== callerUserId) {
+    return { success: false, error: 'Not authorized to update this player state' }
+  }
+
   const raw = await redis.get(`game:${gameId}:player:${userId}`)
   if (!raw) {
     return { success: false, error: 'Player state not found' }

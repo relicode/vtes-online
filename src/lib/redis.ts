@@ -2,7 +2,7 @@ import 'server-only'
 
 import Redis from 'ioredis'
 
-const createRedisClient = () => new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', { lazyConnect: true })
+const createRedisClient = () => new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379')
 
 const globalForRedis = globalThis as unknown as { redis: Redis | undefined }
 

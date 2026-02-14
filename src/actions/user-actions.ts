@@ -28,7 +28,14 @@ const createUser = async (userId: string, name: string): Promise<ActionResult<Us
   return { success: true, data: user }
 }
 
+const MAX_USER_ID_LENGTH = 64
+const USER_ID_PATTERN = /^[a-zA-Z0-9_-]+$/
+
 const getOrCreateUser = async (userId: string): Promise<ActionResult<User>> => {
+  if (!userId || userId.length > MAX_USER_ID_LENGTH || !USER_ID_PATTERN.test(userId)) {
+    return { success: false, error: 'Invalid user ID' }
+  }
+
   const existing = await redis.get(`user:${userId}`)
   if (existing) {
     return { success: true, data: JSON.parse(existing) as User }

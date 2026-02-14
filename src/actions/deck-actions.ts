@@ -34,19 +34,26 @@ const getUserDecks = async (userId: string): Promise<ActionResult<Deck[]>> => {
   return { success: true, data: decks }
 }
 
-const createDeck = async (
-  userId: string,
-  name: string,
-  description: string,
-): Promise<ActionResult<Deck>> => {
+const MAX_NAME_LENGTH = 200
+const MAX_DESCRIPTION_LENGTH = 2000
+
+const createDeck = async (userId: string, name: string, description: string): Promise<ActionResult<Deck>> => {
+  const trimmedName = name.trim()
+  if (!trimmedName || trimmedName.length > MAX_NAME_LENGTH) {
+    return { success: false, error: 'Deck name is required and must be under 200 characters' }
+  }
+  if (description.length > MAX_DESCRIPTION_LENGTH) {
+    return { success: false, error: 'Description must be under 2000 characters' }
+  }
+
   const deckId = crypto.randomUUID()
   const now = new Date().toISOString()
 
   const deck: Deck = {
     id: deckId,
     userId,
-    name,
-    description,
+    name: trimmedName,
+    description: description.trim(),
     crypt: [],
     library: [],
     createdAt: now,
@@ -60,12 +67,13 @@ const createDeck = async (
 
 const saveDeck = async (
   deckId: string,
+  userId: string,
   updates: {
     name?: string
     description?: string
     crypt?: DeckCardEntry[]
     library?: DeckCardEntry[]
-  },
+  }
 ): Promise<ActionResult<Deck>> => {
   const raw = await redis.get(`deck:${deckId}`)
   if (!raw) {
@@ -73,6 +81,10 @@ const saveDeck = async (
   }
 
   const deck = JSON.parse(raw) as Deck
+  if (deck.userId !== userId) {
+    return { success: false, error: 'Not authorized to edit this deck' }
+  }
+
   const updated: Deck = {
     ...deck,
     ...updates,
@@ -84,6 +96,16 @@ const saveDeck = async (
 }
 
 const deleteDeck = async (deckId: string, userId: string): Promise<ActionResult<null>> => {
+  const raw = await redis.get(`deck:${deckId}`)
+  if (!raw) {
+    return { success: false, error: 'Deck not found' }
+  }
+
+  const deck = JSON.parse(raw) as Deck
+  if (deck.userId !== userId) {
+    return { success: false, error: 'Not authorized to delete this deck' }
+  }
+
   await redis.pipeline().del(`deck:${deckId}`).srem(`user:${userId}:decks`, deckId).exec()
 
   return { success: true, data: null }

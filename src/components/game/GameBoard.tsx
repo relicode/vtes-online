@@ -8,7 +8,6 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
 import type { GamePublicState, PlayerPrivateState } from '$/types/game'
-
 import PlayerHand from './PlayerHand'
 import VampireCard from './VampireCard'
 

@@ -30,8 +30,8 @@ const DeckEditor = ({ deck: initialDeck }: DeckEditorProps) => {
   const [library, setLibrary] = useState<DeckCardEntry[]>(initialDeck.library)
   const [snackbar, setSnackbar] = useState<SaveState>(null)
 
-  const saveAction = async (): Promise<SaveState> => {
-    const result = await saveDeck(initialDeck.id, { name, description, crypt, library })
+  const saveAction = async (_previousState: SaveState): Promise<SaveState> => {
+    const result = await saveDeck(initialDeck.id, initialDeck.userId, { name, description, crypt, library })
     const state: SaveState = result.success
       ? { message: 'Deck saved.', error: false }
       : { message: result.error, error: true }
@@ -41,26 +41,22 @@ const DeckEditor = ({ deck: initialDeck }: DeckEditorProps) => {
 
   const [, formAction, isPending] = useActionState(saveAction, null)
 
+  const addOrIncrement = (prev: DeckCardEntry[], cardId: string): DeckCardEntry[] => {
+    const existing = prev.find((e) => e.cardId === cardId)
+    if (existing) {
+      return prev.map((e) => (e.cardId === cardId ? { ...e, count: e.count + 1 } : e))
+    }
+    return [...prev, { cardId, count: 1 }]
+  }
+
   const handleAddCard = (cardId: string) => {
     const card = getCardById(cardId)
     if (!card) return
 
     if (card.type === 'crypt') {
-      setCrypt((prev) => {
-        const existing = prev.find((e) => e.cardId === cardId)
-        if (existing) {
-          return prev.map((e) => (e.cardId === cardId ? { ...e, count: e.count + 1 } : e))
-        }
-        return [...prev, { cardId, count: 1 }]
-      })
+      setCrypt((prev) => addOrIncrement(prev, cardId))
     } else {
-      setLibrary((prev) => {
-        const existing = prev.find((e) => e.cardId === cardId)
-        if (existing) {
-          return prev.map((e) => (e.cardId === cardId ? { ...e, count: e.count + 1 } : e))
-        }
-        return [...prev, { cardId, count: 1 }]
-      })
+      setLibrary((prev) => addOrIncrement(prev, cardId))
     }
   }
 
@@ -85,7 +81,6 @@ const DeckEditor = ({ deck: initialDeck }: DeckEditorProps) => {
 
   const cryptValid = cryptTotal === 12
   const libraryValid = libraryTotal >= 60 && libraryTotal <= 90
-  const deckValid = cryptValid && libraryValid
 
   const validationErrors: string[] = []
   if (cryptTotal !== 12) {
@@ -157,7 +152,7 @@ const DeckEditor = ({ deck: initialDeck }: DeckEditorProps) => {
         sx={{ px: 3, py: 1.5, borderTop: 1, borderColor: 'divider', flexShrink: 0 }}
       >
         <form action={formAction}>
-          <Button type="submit" variant="contained" disabled={isPending || !deckValid}>
+          <Button type="submit" variant="contained" disabled={isPending}>
             {isPending ? 'Saving...' : 'Save Deck'}
           </Button>
         </form>
