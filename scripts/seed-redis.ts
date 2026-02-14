@@ -12,6 +12,8 @@ import { fileURLToPath } from 'node:url'
 
 import Redis from 'ioredis'
 
+import type { GameState, PlayerState, UncontrolledMinion } from '$/types/game'
+
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -68,6 +70,85 @@ const shuffle = <T>(arr: T[]): T[] => {
 }
 
 const pickRandom = <T>(arr: T[], n: number): T[] => shuffle(arr).slice(0, n)
+
+/** Expand { cardId, count }[] into a flat array of card IDs (each repeated count times). */
+const expandEntries = (entries: DeckCardEntry[]): string[] =>
+  entries.flatMap((e) => Array.from({ length: e.count }, () => e.cardId))
+
+/** Build a populated PlayerState from a user and their deck. */
+const buildPlayerState = (userId: string, userName: string, deck: Deck): PlayerState => {
+  const cryptCards = shuffle(expandEntries(deck.crypt))
+  const libraryCards = shuffle(expandEntries(deck.library))
+
+  // Draw 4 crypt cards into uncontrolled
+  const uncontrolled: UncontrolledMinion[] = cryptCards.splice(0, 4).map((cardId) => ({
+    instanceId: randomUUID(),
+    cardId,
+    blood: 0,
+  }))
+
+  // Draw 7 library cards into hand
+  const hand = libraryCards.splice(0, 7)
+
+  return {
+    playerId: userId,
+    deckId: deck.id,
+    name: userName,
+    pool: 30,
+    library: libraryCards,
+    crypt: cryptCards,
+    hand,
+    ashHeap: [],
+    removed: [],
+    minions: [],
+    libraryCardsInPlay: [],
+    uncontrolled,
+    ousted: false,
+    victoryPoints: 0,
+  }
+}
+
+/** Build and store a test GameState in Redis. */
+const seedTestGame = async (
+  redis: Redis,
+  gamePlayers: { userId: string; userName: string; deck: Deck }[],
+) => {
+  const now = new Date().toISOString()
+  const playerOrder = gamePlayers.map((p) => p.userId)
+
+  const players: Record<string, PlayerState> = {}
+  for (const p of gamePlayers) {
+    players[p.userId] = buildPlayerState(p.userId, p.userName, p.deck)
+  }
+
+  const game: GameState = {
+    id: 'test-game',
+    name: 'Test Game',
+    status: 'active',
+    createdAt: now,
+    playerOrder,
+    round: 0,
+    turnCount: 0,
+    influenceCounter: 1,
+    turn: { activePlayer: playerOrder[0], phase: 'unlock' },
+    edge: {},
+    contestedCards: [],
+    players,
+  }
+
+  const pipeline = redis.pipeline()
+  pipeline.set('game:test-game', JSON.stringify(game))
+  pipeline.sadd('game:test-game:players', ...playerOrder)
+  await pipeline.exec()
+
+  console.log(`\nCreated test game with ${gamePlayers.length} players:`)
+  for (const p of gamePlayers) {
+    const ps = players[p.userId]
+    console.log(
+      `  ${p.userName} — crypt: ${ps.crypt.length}, library: ${ps.library.length}, hand: ${ps.hand.length}, uncontrolled: ${ps.uncontrolled.length}`,
+    )
+  }
+}
 
 // ─── Deck building ───────────────────────────────────────────────────────────
 
@@ -248,15 +329,18 @@ const main = async () => {
 
   const now = new Date().toISOString()
   const pipeline = redis.pipeline()
+  const gamePlayers: { userId: string; userName: string; deck: Deck }[] = []
 
   for (let u = 1; u <= 5; u++) {
     const userId = `test-user-${u}`
-    const user: User = { id: userId, name: `Test User ${u}`, createdAt: now }
+    const userName = `Test User ${u}`
+    const user: User = { id: userId, name: userName, createdAt: now }
     pipeline.set(`user:${userId}`, JSON.stringify(user))
 
     const userDecks = deckConfigs.slice((u - 1) * 5, u * 5)
 
-    for (const cfg of userDecks) {
+    for (let d = 0; d < userDecks.length; d++) {
+      const cfg = userDecks[d]
       const deckId = randomUUID()
       const groupPair = bestGroupPair(cfg.clan)
       const cryptEntries = buildCrypt(cfg.clan, groupPair)
@@ -274,6 +358,11 @@ const main = async () => {
         updatedAt: now,
       }
 
+      // Collect first deck for users 1–4 for the test game
+      if (d === 0 && u <= 4) {
+        gamePlayers.push({ userId, userName, deck })
+      }
+
       const cryptTotal = cryptEntries.reduce((s, e) => s + e.count, 0)
       const libTotal = libraryEntries.reduce((s, e) => s + e.count, 0)
       console.log(`  ${cfg.name} (${cfg.clan} G${groupPair[0]}-${groupPair[1]}) — crypt: ${cryptTotal}, library: ${libTotal}`)
@@ -287,6 +376,8 @@ const main = async () => {
 
   await pipeline.exec()
   console.log('\nDone! Seeded 5 users with 25 decks total.')
+
+  await seedTestGame(redis, gamePlayers)
   await redis.quit()
 }
 

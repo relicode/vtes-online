@@ -12,6 +12,7 @@
     "lint:eslint": "eslint",
     "lint:prettier": "prettier --check .",
     "lint:typescript": "tsc --noEmit",
+    "seed": "tsx scripts/seed-redis.ts",
     "start": "next start"
   },
   "dependencies": {
@@ -40,6 +41,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "prettier": "^3.8.1",
+    "tsx": "^4",
     "typescript": "^5"
   }
 }
