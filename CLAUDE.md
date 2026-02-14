@@ -15,7 +15,7 @@ No test framework is configured yet.
 
 ## Architecture
 
-Next.js 16 App Router with React 19 and MUI Material v7. React Compiler is enabled.
+Next.js 16 App Router with React 19 and MUI Material v7. React Compiler is enabled (`reactCompiler: true` in `next.config.ts`). Do not use manual `useMemo`, `useCallback`, or `React.memo` — the compiler handles memoization automatically.
 
 - `src/app/` — App Router pages and layouts (server components by default)
 - `src/components/` — shared components

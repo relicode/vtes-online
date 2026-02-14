@@ -2,7 +2,7 @@ import InitColorSchemeScript from '@mui/material/InitColorSchemeScript'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 
-import ThemeRegistry from '$/components/ThemeRegistry'
+import ThemeRegistry from '$/app/ThemeRegistry'
 
 const inter = Inter({
   variable: '--font-inter',
