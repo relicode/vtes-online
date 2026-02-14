@@ -33,8 +33,8 @@ const GamePage = async ({ params }: GamePageProps) => {
         </Typography>
         <Stack direction="row" spacing={1} sx={{ mb: 3 }}>
           <Chip label={game.status} color={game.status === 'active' ? 'success' : 'default'} />
-          <Chip label={`Turn ${game.turnNumber}`} variant="outlined" />
-          <Chip label={`${game.players.length} players`} variant="outlined" />
+          <Chip label={`Round ${game.round} / Turn ${game.turnCount}`} variant="outlined" />
+          <Chip label={`${game.playerCount} players`} variant="outlined" />
         </Stack>
 
         <Typography variant="h6" sx={{ mb: 1 }}>
@@ -42,13 +42,13 @@ const GamePage = async ({ params }: GamePageProps) => {
         </Typography>
         <Stack spacing={1}>
           {game.players.map((player) => (
-            <Paper key={player.userId} variant="outlined" sx={{ p: 2 }}>
+            <Paper key={player.playerId} variant="outlined" sx={{ p: 2 }}>
               <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Typography variant="subtitle1">{player.name}</Typography>
                 <Stack direction="row" spacing={1}>
-                  <Chip label={`Pool: ${player.poolSize}`} size="small" variant="outlined" />
+                  <Chip label={`Pool: ${player.pool}`} size="small" variant="outlined" />
                   <Chip label={`Vampires: ${player.vampiresInPlay}`} size="small" variant="outlined" />
-                  {game.currentTurn === player.userId && <Chip label="Active" size="small" color="primary" />}
+                  {game.activePlayer === player.playerId && <Chip label="Active" size="small" color="primary" />}
                 </Stack>
               </Stack>
             </Paper>

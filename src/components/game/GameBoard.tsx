@@ -7,49 +7,48 @@ import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
-import type { GamePublicState, PlayerPrivateState } from '$/types/game'
+import type { GameView } from '$/types/game'
+import MinionCard from './MinionCard'
 import PlayerHand from './PlayerHand'
-import VampireCard from './VampireCard'
 
 type GameBoardProps = {
-  game: GamePublicState
-  playerState: PlayerPrivateState
+  gameView: GameView
 }
 
-const GameBoard = ({ game, playerState }: GameBoardProps) => {
-  const isMyTurn = game.currentTurn === playerState.userId
+const GameBoard = ({ gameView }: GameBoardProps) => {
+  const isMyTurn = gameView.turn.activePlayer === gameView.self.playerId
 
   return (
     <Box>
       <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-        <Chip label={`Turn ${game.turnNumber}`} color="primary" />
+        <Chip label={`Round ${gameView.round} / Turn ${gameView.turnCount}`} color="primary" />
         <Chip label={isMyTurn ? 'Your Turn' : 'Waiting...'} color={isMyTurn ? 'success' : 'default'} />
-        <Chip label={`Pool: ${playerState.pool}`} variant="outlined" />
-        <Chip label={`Library: ${playerState.librarySize}`} variant="outlined" />
-        <Chip label={`Crypt: ${playerState.cryptSize}`} variant="outlined" />
+        <Chip label={`Pool: ${gameView.self.pool}`} variant="outlined" />
+        <Chip label={`Library: ${gameView.self.library.length}`} variant="outlined" />
+        <Chip label={`Crypt: ${gameView.self.crypt.length}`} variant="outlined" />
       </Stack>
 
       <Typography variant="h6" sx={{ mb: 1 }}>
-        Vampires in Play
+        Minions in Play
       </Typography>
       <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', mb: 2 }}>
-        {playerState.vampiresInPlay.length === 0 ? (
+        {gameView.self.minions.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
-            No vampires in play.
+            No minions in play.
           </Typography>
         ) : (
-          playerState.vampiresInPlay.map((v) => <VampireCard key={v.cardId} vampire={v} />)
+          gameView.self.minions.map((m) => <MinionCard key={m.instanceId} minion={m} />)
         )}
       </Stack>
 
-      {playerState.uncontrolledRegion.length > 0 && (
+      {gameView.self.uncontrolled.length > 0 && (
         <>
           <Typography variant="h6" sx={{ mb: 1 }}>
-            Uncontrolled Region ({playerState.uncontrolledRegion.length})
+            Uncontrolled Region ({gameView.self.uncontrolled.length})
           </Typography>
           <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-            {playerState.uncontrolledRegion.map((cardId, i) => (
-              <Chip key={`${cardId}-${i}`} label={cardId} variant="outlined" />
+            {gameView.self.uncontrolled.map((u) => (
+              <Chip key={u.instanceId} label={`Blood: ${u.blood}`} variant="outlined" />
             ))}
           </Stack>
         </>
@@ -57,7 +56,7 @@ const GameBoard = ({ game, playerState }: GameBoardProps) => {
 
       <Divider sx={{ my: 2 }} />
 
-      <PlayerHand hand={playerState.hand} />
+      <PlayerHand hand={gameView.self.hand} />
 
       <Divider sx={{ my: 2 }} />
 
@@ -65,17 +64,15 @@ const GameBoard = ({ game, playerState }: GameBoardProps) => {
         Other Players
       </Typography>
       <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: 'wrap' }}>
-        {game.players
-          .filter((p) => p.userId !== playerState.userId)
-          .map((p) => (
-            <Paper key={p.userId} variant="outlined" sx={{ p: 1.5 }}>
-              <Typography variant="subtitle2">{p.name}</Typography>
-              <Stack direction="row" spacing={0.5} sx={{ mt: 0.5 }}>
-                <Chip label={`Pool: ${p.poolSize}`} size="small" variant="outlined" />
-                <Chip label={`Vampires: ${p.vampiresInPlay}`} size="small" variant="outlined" />
-              </Stack>
-            </Paper>
-          ))}
+        {gameView.opponents.map((opp) => (
+          <Paper key={opp.playerId} variant="outlined" sx={{ p: 1.5 }}>
+            <Typography variant="subtitle2">{opp.name}</Typography>
+            <Stack direction="row" spacing={0.5} sx={{ mt: 0.5 }}>
+              <Chip label={`Pool: ${opp.pool}`} size="small" variant="outlined" />
+              <Chip label={`Minions: ${opp.minions.length}`} size="small" variant="outlined" />
+            </Stack>
+          </Paper>
+        ))}
       </Stack>
     </Box>
   )
