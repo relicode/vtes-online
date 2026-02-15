@@ -46,6 +46,17 @@ const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => 
     )
   }
 
+  // Global card data for cross-player targeting (sources shown in the target player's section)
+  const allGlobalCards = game.players.flatMap((p) => [
+    ...p.controlledCrypt.map((c) => ({ instanceId: c.instanceId, target: c.target, card: getCardById(c.cardId), playerId: p.playerId })),
+    ...p.libraryCardsInPlay.map((c) => ({ instanceId: c.instanceId, target: c.target, card: getCardById(c.cardId), playerId: p.playerId })),
+  ])
+  const globalInstanceIds = new Set(allGlobalCards.map((c) => c.instanceId))
+
+  const counterBadgeSlotProps = {
+    badge: { style: { fontSize: 10, minWidth: 20, height: 20, borderRadius: '50%', padding: 0 } },
+  } as const
+
   return (
     <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Stack direction="row" spacing={1} alignItems="center">
@@ -72,91 +83,112 @@ const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => 
             </Stack>
 
             {(() => {
-              const resolved = player.libraryCardsInPlay.map((c) => ({ ...c, card: getCardById(c.cardId) }))
-              const nonAllyCards = resolved.filter((c) => c.card?.type === 'library' && !c.card.types.includes('Ally'))
-              const allyCards = resolved.filter((c) => c.card?.type === 'library' && c.card.types.includes('Ally'))
+              // Unify all controlled in-play cards with resolved card data
+              const allCards = [
+                ...player.controlledCrypt.map((c) => ({
+                  ...c,
+                  card: getCardById(c.cardId),
+                  kind: 'crypt' as const,
+                })),
+                ...player.libraryCardsInPlay.map((c) => ({
+                  ...c,
+                  card: getCardById(c.cardId),
+                  kind: 'library' as const,
+                })),
+              ]
+
+              const allInstanceIds = new Set(allCards.map((c) => c.instanceId))
+
+              // Same-player sources: cards targeting another card in this player's area
+              const sourceIds = new Set(
+                allCards.filter((c) => c.target && allInstanceIds.has(c.target)).map((c) => c.instanceId),
+              )
+
+              // Cross-player sources: cards from other players targeting this player's cards
+              const foreignSources = allGlobalCards.filter(
+                (c) => c.playerId !== player.playerId && c.target && allInstanceIds.has(c.target),
+              )
+
+              // Build a flat source lookup: targetInstanceId → source cards (same-player + foreign)
+              const allSourceCards = [
+                ...allCards.filter((c) => sourceIds.has(c.instanceId)),
+                ...foreignSources,
+              ]
+              const sourcesByTarget = new Map<string, typeof allSourceCards>()
+              for (const src of allSourceCards) {
+                const list = sourcesByTarget.get(src.target!)
+                if (list) list.push(src)
+                else sourcesByTarget.set(src.target!, [src])
+              }
+
+              // Anchors = this player's cards not acting as a same-player source
+              const groups = allCards
+                .filter((c) => !sourceIds.has(c.instanceId))
+                .map((anchor) => ({
+                  anchor,
+                  sources: sourcesByTarget.get(anchor.instanceId) ?? [],
+                }))
+
+              const needsBadge = (c: (typeof allCards)[number]) =>
+                c.kind === 'crypt' ||
+                (c.card?.type === 'library' && c.card.types.some((t) => t === 'Ally' || t === 'Retainer'))
+
               return (
                 <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                  <Stack sx={{ flex: 1, gap: 0.5 }}>
-                    {nonAllyCards.length > 0 && (
-                      <Stack direction="row" spacing={0.5} useFlexGap sx={{ flexWrap: 'wrap' }}>
-                        {nonAllyCards.map((c) => (
-                          <Box
-                            key={c.instanceId}
-                            component="img"
-                            src={c.card?.url}
-                            alt="Library card in play"
-                            sx={{
-                              width: 60,
-                              aspectRatio: '48/67',
-                              borderRadius: 0.5,
-                              display: 'block',
-                              transform: c.locked ? 'rotate(25deg)' : 'none',
-                              transition: 'transform 0.2s',
-                            }}
-                          />
-                        ))}
-                      </Stack>
-                    )}
-                    {(player.controlledCrypt.length > 0 || allyCards.length > 0) && (
-                      <Stack direction="row" spacing={0.5} useFlexGap sx={{ flexWrap: 'wrap' }}>
-                        {player.controlledCrypt.map((m) => {
-                          const minionCard = getCardById(m.cardId)
-                          return (
+                  <Stack direction="row" spacing={0.5} useFlexGap sx={{ flexWrap: 'wrap', flex: 1 }}>
+                    {groups.map(({ anchor, sources }) => {
+                      const hasCrossTarget =
+                        anchor.target && !allInstanceIds.has(anchor.target) && globalInstanceIds.has(anchor.target)
+                      const imgSx = {
+                        width: '100%',
+                        aspectRatio: '48/67',
+                        borderRadius: 0.5,
+                        display: 'block',
+                        ...(hasCrossTarget && { border: '2px dashed', borderColor: 'error.main' }),
+                      }
+
+                      return (
+                        <Box
+                          key={anchor.instanceId}
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            width: 60,
+                            transform: anchor.locked ? 'rotate(25deg)' : 'none',
+                            transition: 'transform 0.2s',
+                          }}
+                        >
+                          {sources.map((src) => (
+                            <Box key={src.instanceId} sx={{ height: 18, overflow: 'hidden', flexShrink: 0 }}>
+                              <Box
+                                component="img"
+                                src={src.card?.url}
+                                alt="Source card"
+                                sx={{ width: '100%', aspectRatio: '48/67', borderRadius: 0.5, display: 'block' }}
+                              />
+                            </Box>
+                          ))}
+                          {needsBadge(anchor) ? (
                             <Badge
-                              key={m.instanceId}
-                              badgeContent={m.counters}
+                              badgeContent={anchor.counters}
                               showZero
                               color="error"
                               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                              sx={{
-                                width: 60,
-                                transform: m.locked ? 'rotate(25deg)' : 'none',
-                                transition: 'transform 0.2s',
-                              }}
-                              slotProps={{
-                                badge: {
-                                  style: { fontSize: 10, minWidth: 20, height: 20, borderRadius: '50%', padding: 0 },
-                                },
-                              }}
+                              slotProps={counterBadgeSlotProps}
                             >
                               <Box
                                 component="img"
-                                src={minionCard?.url}
-                                alt="Minion"
-                                sx={{ width: '100%', aspectRatio: '48/67', borderRadius: 0.5, display: 'block' }}
+                                src={anchor.card?.url}
+                                alt={anchor.kind === 'crypt' ? 'Minion' : 'Ally'}
+                                sx={imgSx}
                               />
                             </Badge>
-                          )
-                        })}
-                        {allyCards.map((c) => (
-                          <Badge
-                            key={c.instanceId}
-                            badgeContent={c.counters}
-                            showZero
-                            color="error"
-                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                            sx={{
-                              width: 60,
-                              transform: c.locked ? 'rotate(25deg)' : 'none',
-                              transition: 'transform 0.2s',
-                            }}
-                            slotProps={{
-                              badge: {
-                                style: { fontSize: 10, minWidth: 20, height: 20, borderRadius: '50%', padding: 0 },
-                              },
-                            }}
-                          >
-                            <Box
-                              component="img"
-                              src={c.card?.url}
-                              alt="Ally"
-                              sx={{ width: '100%', aspectRatio: '48/67', borderRadius: 0.5, display: 'block' }}
-                            />
-                          </Badge>
-                        ))}
-                      </Stack>
-                    )}
+                          ) : (
+                            <Box component="img" src={anchor.card?.url} alt="Library card in play" sx={imgSx} />
+                          )}
+                        </Box>
+                      )
+                    })}
                   </Stack>
                   {player.uncontrolledCrypt.length > 0 && (
                     <Stack spacing={0.5}>
@@ -167,11 +199,7 @@ const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => 
                           showZero
                           color="error"
                           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                          slotProps={{
-                            badge: {
-                              style: { fontSize: 10, minWidth: 20, height: 20, borderRadius: '50%', padding: 0 },
-                            },
-                          }}
+                          slotProps={counterBadgeSlotProps}
                         >
                           <Box
                             component="img"
