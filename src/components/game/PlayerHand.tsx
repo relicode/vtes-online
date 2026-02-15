@@ -74,6 +74,7 @@ const PlayerHand = ({ hand, showImages, onPlay }: PlayerHandProps) => {
         hand.map((cardId, index) => {
           const card = getCardById(cardId)
           const isSelected = selected.has(index)
+          const badgeBorderColor = isSelected ? 'primary.main' : card?.type === 'crypt' ? 'warning.main' : 'success.main'
           return (
             <Tooltip
               key={`${cardId}-${index}`}
@@ -114,6 +115,8 @@ const PlayerHand = ({ hand, showImages, onPlay }: PlayerHandProps) => {
                           bgcolor: 'background.paper',
                           '&:hover': { bgcolor: 'background.paper' },
                           borderRadius: '50%',
+                          border: 2,
+                          borderColor: badgeBorderColor,
                         }}
                       >
                         <ExpandMoreIcon

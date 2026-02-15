@@ -3,7 +3,7 @@
 import Box from '@mui/material/Box'
 
 import type { GameView } from '$/types/game'
-import GameBoard from './GameBoard'
+import PlayerPlayArea from './PlayerPlayArea'
 import useGameEventStream from './GameEventStream'
 
 type PlayerGameContentProps = {
@@ -17,7 +17,7 @@ const PlayerGameContent = ({ gameId, playerId, initialState }: PlayerGameContent
 
   return (
     <Box sx={{ p: 2 }}>
-      <GameBoard gameView={gameView} gameId={gameId} playerId={playerId} />
+      <PlayerPlayArea gameView={gameView} gameId={gameId} playerId={playerId} />
     </Box>
   )
 }

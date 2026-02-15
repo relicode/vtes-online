@@ -154,6 +154,7 @@ type LibraryCard = {
   disciplines?: Discipline[]
   poolCost?: number
   bloodCost?: number
+  life?: number
 }
 
 type Card = CryptCard | LibraryCard

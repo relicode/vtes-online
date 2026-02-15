@@ -15,7 +15,7 @@ const CardRow = ({ title, actions, children }: CardRowProps) => (
       </Typography>
       {actions}
     </Stack>
-    <Stack direction="row" spacing={3} useFlexGap sx={{ flexWrap: 'wrap' }}>
+    <Stack direction="row" spacing={3} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
       {children}
     </Stack>
   </div>

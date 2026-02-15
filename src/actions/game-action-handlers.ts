@@ -239,7 +239,7 @@ const handlePlayFromHand = (state: GameState, playerId: string, indices: number[
         cardId,
         owner: playerId,
         controller: playerId,
-        counters: 0,
+        counters: card?.type === 'library' ? (card.life ?? 0) : 0,
         locked: false,
       })
     }
@@ -301,6 +301,25 @@ const handleToggleTorpor = (state: GameState, playerId: string, minionInstanceId
   }
 }
 
+const handleAdjustLibraryCardCounters = (
+  state: GameState,
+  playerId: string,
+  instanceId: string,
+  delta: number
+): HandlerResult => {
+  const player = state.players[playerId]
+  const card = player.libraryCardsInPlay.find((c) => c.instanceId === instanceId)
+  if (!card) return { success: false, error: 'Library card not found' }
+  card.counters = Math.max(0, card.counters + delta)
+  const name = getCardById(card.cardId)?.name ?? 'a card'
+  const verb = delta > 0 ? 'added' : 'removed'
+  return {
+    success: true,
+    state,
+    description: `${verb} ${Math.abs(delta)} counter${Math.abs(delta) !== 1 ? 's' : ''} on ${name}`,
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Main dispatcher
 // ---------------------------------------------------------------------------
@@ -333,6 +352,8 @@ const applyGameAction = (state: GameState, playerId: string, action: GameAction)
       return handlePlayFromHand(state, playerId, action.indices)
     case 'trashFromPlay':
       return handleTrashFromPlay(state, playerId, action.instanceIds)
+    case 'adjustLibraryCardCounters':
+      return handleAdjustLibraryCardCounters(state, playerId, action.instanceId, action.delta)
   }
 }
 

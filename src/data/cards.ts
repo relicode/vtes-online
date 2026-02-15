@@ -9,6 +9,11 @@ const parseCost = (s: string): number => {
   return Number.isNaN(n) ? Infinity : n
 }
 
+const parseLife = (cardText: string): number | undefined => {
+  const match = cardText.match(/with (\d+) life/)
+  return match ? Number(match[1]) : undefined
+}
+
 const cryptCards: CryptCard[] = rawCrypt.map((c) => ({
   id: String(c.id),
   name: c.name,
@@ -23,18 +28,23 @@ const cryptCards: CryptCard[] = rawCrypt.map((c) => ({
   ...(c.adv ? { adv: c.adv } : {}),
 }))
 
-const libraryCards: LibraryCard[] = rawLibrary.map((c) => ({
-  id: String(c.id),
-  name: c.name,
-  type: 'library' as const,
-  types: c.types as LibraryCardType[],
-  cardText: c.card_text,
-  url: localUrl(c.url),
-  ...(c.clans ? { clans: c.clans as Clan[] } : {}),
-  ...(c.disciplines ? { disciplines: c.disciplines as Discipline[] } : {}),
-  ...(c.pool_cost ? { poolCost: parseCost(c.pool_cost) } : {}),
-  ...(c.blood_cost ? { bloodCost: parseCost(c.blood_cost) } : {}),
-}))
+const libraryCards: LibraryCard[] = rawLibrary.map((c) => {
+  const isAllyOrRetainer = (c.types as string[]).some((t) => t === 'Ally' || t === 'Retainer')
+  const life = isAllyOrRetainer ? parseLife(c.card_text) : undefined
+  return {
+    id: String(c.id),
+    name: c.name,
+    type: 'library' as const,
+    types: c.types as LibraryCardType[],
+    cardText: c.card_text,
+    url: localUrl(c.url),
+    ...(c.clans ? { clans: c.clans as Clan[] } : {}),
+    ...(c.disciplines ? { disciplines: c.disciplines as Discipline[] } : {}),
+    ...(c.pool_cost ? { poolCost: parseCost(c.pool_cost) } : {}),
+    ...(c.blood_cost ? { bloodCost: parseCost(c.blood_cost) } : {}),
+    ...(life !== undefined ? { life } : {}),
+  }
+})
 
 const cardMap = new Map<string, Card>([...cryptCards, ...libraryCards].map((card) => [card.id, card]))
 
