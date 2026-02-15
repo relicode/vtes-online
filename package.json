@@ -12,6 +12,8 @@
     "lint:eslint": "eslint",
     "lint:prettier": "prettier --check .",
     "lint:typescript": "tsc --noEmit",
+    "seed": "tsx scripts/seed-redis.ts",
+    "seed:flush": "tsx scripts/seed-redis.ts --flush",
     "start": "next start"
   },
   "dependencies": {
@@ -23,6 +25,7 @@
     "@mui/material-nextjs": "^7.3.8",
     "ioredis": "^5.9.3",
     "lodash-es": "^4.17.23",
+    "material-ui-confirm": "^4.0.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -40,6 +43,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "prettier": "^3.8.1",
+    "tsx": "^4",
     "typescript": "^5"
   }
 }
