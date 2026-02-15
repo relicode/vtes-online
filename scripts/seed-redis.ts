@@ -9,10 +9,10 @@ import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-
 import Redis from 'ioredis'
 
 import type { GameState, MinionInPlay, PlayerState, UncontrolledMinion } from '$/types/game'
+import type { ActionLogEntry, GameAction } from '$/types/game-actions'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -93,12 +93,7 @@ type PlayerConfig = {
 }
 
 /** Build a mid-game PlayerState shaped by a config. */
-const buildPlayerState = (
-  userId: string,
-  userName: string,
-  deck: Deck,
-  cfg: PlayerConfig,
-): PlayerState => {
+const buildPlayerState = (userId: string, userName: string, deck: Deck, cfg: PlayerConfig): PlayerState => {
   const cryptCards = shuffle(expandEntries(deck.crypt))
   const libraryCards = shuffle(expandEntries(deck.library))
 
@@ -153,22 +148,64 @@ const buildPlayerState = (
 // Per-player configs simulating ~6 rounds of play
 const playerConfigs: PlayerConfig[] = [
   // Player 1 (Toreador Bleed) — aggressive bleeder, spent pool on vampires, took some hits
-  { vampiresOut: 3, vampiresInTorpor: 0, lockedVampires: 1, uncontrolledCount: 1, pool: 17, cardsPlayed: 15, handSize: 5, victoryPoints: 0 },
+  {
+    vampiresOut: 3,
+    vampiresInTorpor: 0,
+    lockedVampires: 1,
+    uncontrolledCount: 1,
+    pool: 17,
+    cardsPlayed: 15,
+    handSize: 5,
+    victoryPoints: 0,
+  },
   // Player 2 (Lasombra Nocturn) — stealth-bleed, one vampire got sent to torpor
-  { vampiresOut: 3, vampiresInTorpor: 1, lockedVampires: 1, uncontrolledCount: 0, pool: 11, cardsPlayed: 18, handSize: 4, victoryPoints: 0 },
+  {
+    vampiresOut: 3,
+    vampiresInTorpor: 1,
+    lockedVampires: 1,
+    uncontrolledCount: 0,
+    pool: 11,
+    cardsPlayed: 18,
+    handSize: 4,
+    victoryPoints: 0,
+  },
   // Player 3 (Giovanni Powerbleed) — conservative play, healthy pool
-  { vampiresOut: 3, vampiresInTorpor: 0, lockedVampires: 0, uncontrolledCount: 0, pool: 21, cardsPlayed: 12, handSize: 6, victoryPoints: 0 },
+  {
+    vampiresOut: 3,
+    vampiresInTorpor: 0,
+    lockedVampires: 0,
+    uncontrolledCount: 0,
+    pool: 21,
+    cardsPlayed: 12,
+    handSize: 6,
+    victoryPoints: 0,
+  },
   // Player 4 (Brujah Presence Vote) — strong political position, gained pool from votes
-  { vampiresOut: 4, vampiresInTorpor: 0, lockedVampires: 2, uncontrolledCount: 0, pool: 24, cardsPlayed: 10, handSize: 7, victoryPoints: 0 },
+  {
+    vampiresOut: 4,
+    vampiresInTorpor: 0,
+    lockedVampires: 2,
+    uncontrolledCount: 0,
+    pool: 24,
+    cardsPlayed: 10,
+    handSize: 7,
+    victoryPoints: 0,
+  },
   // Player 5 (Guruhi Potence Rush) — in trouble, rushed hard but took damage
-  { vampiresOut: 2, vampiresInTorpor: 0, lockedVampires: 1, uncontrolledCount: 1, pool: 6, cardsPlayed: 20, handSize: 3, victoryPoints: 0 },
+  {
+    vampiresOut: 2,
+    vampiresInTorpor: 0,
+    lockedVampires: 1,
+    uncontrolledCount: 1,
+    pool: 6,
+    cardsPlayed: 20,
+    handSize: 3,
+    victoryPoints: 0,
+  },
 ]
 
 /** Build and store a test GameState in Redis. */
-const seedTestGame = async (
-  redis: Redis,
-  gamePlayers: { userId: string; userName: string; deck: Deck }[],
-) => {
+const seedTestGame = async (redis: Redis, gamePlayers: { userId: string; userName: string; deck: Deck }[]) => {
   const now = new Date().toISOString()
   const playerOrder = gamePlayers.map((p) => p.userId)
 
@@ -193,9 +230,40 @@ const seedTestGame = async (
     players,
   }
 
+  // Build sample action log entries
+  const sampleActions: { playerIdx: number; type: GameAction['type']; desc: string }[] = [
+    { playerIdx: 0, type: 'drawFromLibrary', desc: 'drew 1 card from library' },
+    { playerIdx: 0, type: 'adjustPool', desc: 'lost 2 pool (now 17)' },
+    { playerIdx: 1, type: 'drawFromCrypt', desc: 'drew 1 card from crypt' },
+    { playerIdx: 1, type: 'toggleMinionLock', desc: 'locked a minion' },
+    { playerIdx: 2, type: 'advancePhase', desc: 'advanced to master phase' },
+    { playerIdx: 3, type: 'adjustPool', desc: 'gained 1 pool (now 24)' },
+    { playerIdx: 3, type: 'setEdge', desc: 'took the Edge' },
+    { playerIdx: 4, type: 'drawFromLibrary', desc: 'drew 1 card from library' },
+    { playerIdx: 0, type: 'advancePhase', desc: 'advanced to minion phase' },
+    { playerIdx: 2, type: 'toggleMinionLock', desc: 'unlocked a minion' },
+  ]
+
+  const logEntries: ActionLogEntry[] = sampleActions.map((a, i) => {
+    const p = gamePlayers[a.playerIdx]
+    const timestamp = new Date(Date.now() - (sampleActions.length - i) * 15000).toISOString()
+    return {
+      id: randomUUID(),
+      timestamp,
+      playerId: p.userId,
+      playerName: p.userName,
+      type: a.type,
+      description: `${p.userName} ${a.desc}`,
+    }
+  })
+
   const pipeline = redis.pipeline()
   pipeline.set('game:test-game', JSON.stringify(game))
   pipeline.sadd('game:test-game:players', ...playerOrder)
+  pipeline.del('game:test-game:log')
+  for (const entry of [...logEntries].reverse()) {
+    pipeline.lpush('game:test-game:log', JSON.stringify(entry))
+  }
   await pipeline.exec()
 
   console.log(`\nCreated test game (round ${game.round}, ${gamePlayers.length} players):`)
@@ -203,9 +271,10 @@ const seedTestGame = async (
     const ps = players[p.userId]
     const torporCount = ps.minions.filter((m) => m.inTorpor).length
     console.log(
-      `  ${p.userName} — pool: ${ps.pool}, minions: ${ps.minions.length}${torporCount ? ` (${torporCount} in torpor)` : ''}, hand: ${ps.hand.length}, ash heap: ${ps.ashHeap.length}, library: ${ps.library.length}`,
+      `  ${p.userName} — pool: ${ps.pool}, minions: ${ps.minions.length}${torporCount ? ` (${torporCount} in torpor)` : ''}, hand: ${ps.hand.length}, ash heap: ${ps.ashHeap.length}, library: ${ps.library.length}`
     )
   }
+  console.log(`  Seeded ${logEntries.length} action log entries`)
 }
 
 // ─── Deck building ───────────────────────────────────────────────────────────
@@ -240,9 +309,7 @@ const bestGroupPair = (clan: string): [number, number] => {
 
 /** Build a crypt: 12 vampires from the given clan and group pair, with varied counts. */
 const buildCrypt = (clan: string, groupPair: [number, number]): DeckCardEntry[] => {
-  const candidates = crypt.filter(
-    (c) => c.clans.includes(clan) && c.group >= groupPair[0] && c.group <= groupPair[1],
-  )
+  const candidates = crypt.filter((c) => c.clans.includes(clan) && c.group >= groupPair[0] && c.group <= groupPair[1])
 
   // pick 12 unique vampires (or as many as available)
   const picks = pickRandom(candidates, Math.min(12, candidates.length))
@@ -274,11 +341,14 @@ const buildLibrary = (clan: string, discs: Set<string>): DeckCardEntry[] => {
   // categorize library cards
   const masters = library.filter((c) => c.types.includes('Master'))
   const clanCards = library.filter((c) => c.clans?.includes(clan))
-  const discCards = library.filter(
-    (c) => !c.clans?.length && c.disciplines?.some((d) => discs.has(d.toLowerCase())),
-  )
+  const discCards = library.filter((c) => !c.clans?.length && c.disciplines?.some((d) => discs.has(d.toLowerCase())))
   const generic = library.filter(
-    (c) => !c.clans?.length && !c.disciplines?.length && !c.types.includes('Event') && !c.types.includes('Conviction') && !c.types.includes('Power'),
+    (c) =>
+      !c.clans?.length &&
+      !c.disciplines?.length &&
+      !c.types.includes('Event') &&
+      !c.types.includes('Conviction') &&
+      !c.types.includes('Power')
   )
 
   const selected = new Map<string, number>()
@@ -339,7 +409,11 @@ const buildLibrary = (clan: string, discs: Set<string>): DeckCardEntry[] => {
 
 const deckConfigs: { clan: string; name: string; description: string }[] = [
   // User 1 - Camarilla clans
-  { clan: 'Toreador', name: 'Toreador Bleed', description: 'Classic Toreador stealth-bleed with Presence and Celerity' },
+  {
+    clan: 'Toreador',
+    name: 'Toreador Bleed',
+    description: 'Classic Toreador stealth-bleed with Presence and Celerity',
+  },
   { clan: 'Ventrue', name: 'Ventrue Lawfirm', description: 'Ventrue vote-bleed with Dominate and Fortitude' },
   { clan: 'Malkavian', name: 'Malk Madness', description: 'Dementation stealth-bleed with Malkavian vampires' },
   { clan: 'Tremere', name: 'Tremere Toolbox', description: 'Thaumaturgy-based toolbox with versatile options' },
@@ -348,9 +422,17 @@ const deckConfigs: { clan: string; name: string; description: string }[] = [
   // User 2 - Sabbat clans
   { clan: 'Lasombra', name: 'Lasombra Nocturn', description: 'Obtenebration-heavy stealth-bleed with Lasombra' },
   { clan: 'Tzimisce', name: 'Tzimisce War Ghouls', description: 'Vicissitude combat with War Ghoul allies' },
-  { clan: 'Brujah antitribu', name: 'Brujah Anti Rush', description: 'Aggressive rush combat with Potence and Celerity' },
+  {
+    clan: 'Brujah antitribu',
+    name: 'Brujah Anti Rush',
+    description: 'Aggressive rush combat with Potence and Celerity',
+  },
   { clan: 'Ventrue antitribu', name: 'Ventrue Anti Vote', description: 'Sabbat political deck with Dominate' },
-  { clan: 'Toreador antitribu', name: 'Toreador Anti Bleed', description: 'Presence stealth-bleed from the Sabbat side' },
+  {
+    clan: 'Toreador antitribu',
+    name: 'Toreador Anti Bleed',
+    description: 'Presence stealth-bleed from the Sabbat side',
+  },
 
   // User 3 - Independent / Laibon
   { clan: 'Giovanni', name: 'Giovanni Powerbleed', description: 'Necromancy-based bleed with Giovanni vampires' },
@@ -436,7 +518,9 @@ const main = async () => {
 
       const cryptTotal = cryptEntries.reduce((s, e) => s + e.count, 0)
       const libTotal = libraryEntries.reduce((s, e) => s + e.count, 0)
-      console.log(`  ${cfg.name} (${cfg.clan} G${groupPair[0]}-${groupPair[1]}) — crypt: ${cryptTotal}, library: ${libTotal}`)
+      console.log(
+        `  ${cfg.name} (${cfg.clan} G${groupPair[0]}-${groupPair[1]}) — crypt: ${cryptTotal}, library: ${libTotal}`
+      )
 
       pipeline.set(`deck:${deckId}`, JSON.stringify(deck))
       pipeline.sadd(`user:${userId}:decks`, deckId)

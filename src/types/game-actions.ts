@@ -1,0 +1,51 @@
+// ---------------------------------------------------------------------------
+// Game actions — discriminated union on `type`
+// ---------------------------------------------------------------------------
+
+type DrawFromLibrary = { type: 'drawFromLibrary'; count?: number }
+type DrawFromCrypt = { type: 'drawFromCrypt'; count?: number }
+type ToggleMinionLock = { type: 'toggleMinionLock'; minionInstanceId: string }
+type AdjustMinionCounters = { type: 'adjustMinionCounters'; minionInstanceId: string; delta: number }
+type AdjustPool = { type: 'adjustPool'; delta: number }
+type MoveCard = {
+  type: 'moveCard'
+  cardId: string
+  from: CardZone
+  to: CardZone
+  index?: number
+}
+type AdvancePhase = { type: 'advancePhase' }
+type SetEdge = { type: 'setEdge'; targetPlayerId?: string }
+type AdjustUncontrolledBlood = { type: 'adjustUncontrolledBlood'; minionInstanceId: string; delta: number }
+type Influence = { type: 'influence'; minionInstanceId: string }
+type ToggleTorpor = { type: 'toggleTorpor'; minionInstanceId: string }
+
+type GameAction =
+  | DrawFromLibrary
+  | DrawFromCrypt
+  | ToggleMinionLock
+  | AdjustMinionCounters
+  | AdjustPool
+  | MoveCard
+  | AdvancePhase
+  | SetEdge
+  | AdjustUncontrolledBlood
+  | Influence
+  | ToggleTorpor
+
+type CardZone = 'hand' | 'ashHeap' | 'library' | 'crypt' | 'removed'
+
+// ---------------------------------------------------------------------------
+// Action log entry (stored in Redis list, sent to clients)
+// ---------------------------------------------------------------------------
+
+type ActionLogEntry = {
+  id: string
+  timestamp: string
+  playerId: string
+  playerName: string
+  type: GameAction['type']
+  description: string
+}
+
+export type { ActionLogEntry, CardZone, GameAction }

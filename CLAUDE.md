@@ -28,3 +28,12 @@ Next.js 16 App Router with React 19 and MUI Material v7. React Compiler is enabl
 - **MUI imports**: individual paths — `import Button from '@mui/material/Button'`, never destructured barrel imports
 - **No semicolons**, single quotes, 120 char print width, es5 trailing commas
 - **Import order** (enforced by prettier plugin): third-party → blank line → `$/` aliased → relative
+
+## MCP
+
+Use the mui-mcp server to answer any MUI questions --
+
+- 1. call the "useMuiDocs" tool to fetch the docs of the package relevant in the question
+- 2. call the "fetchDocs" tool to fetch any additional docs if needed using ONLY the URLs present in the returned content.
+- 3. repeat steps 1-2 until you have fetched all relevant docs for the given question
+- 4. use the fetched content to answer the question

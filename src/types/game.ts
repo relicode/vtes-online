@@ -148,6 +148,9 @@ type GameState = {
 // View types (sent to clients)
 // ---------------------------------------------------------------------------
 
+// Re-export ActionLogEntry so consumers can import from game.ts
+export type { ActionLogEntry } from './game-actions'
+
 type OpponentView = {
   playerId: string
   name: string
@@ -185,6 +188,7 @@ type GameView = {
 
   self: PlayerState
   opponents: OpponentView[]
+  actionLog: import('./game-actions').ActionLogEntry[]
 }
 
 type PlayerSummary = {

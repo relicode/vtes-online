@@ -16,21 +16,22 @@ Two separate decks: **Crypt** (vampires/imbued) and **Library** (everything else
 
 ### 2.1 Crypt Cards -- Vampires
 
-| Attribute | Description |
-|---|---|
-| **Name** | Unique -- only one copy per Methuselah in play at a time |
-| **Capacity** | Max blood; also represents pool investment to bring into play |
-| **Clan** | Determines clan-specific card eligibility |
+| Attribute       | Description                                                                             |
+| --------------- | --------------------------------------------------------------------------------------- |
+| **Name**        | Unique -- only one copy per Methuselah in play at a time                                |
+| **Capacity**    | Max blood; also represents pool investment to bring into play                           |
+| **Clan**        | Determines clan-specific card eligibility                                               |
 | **Disciplines** | Square icon = basic (inferior), Diamond icon = superior. Superior can use either level. |
-| **Group** | 1-7+. Entire crypt must use one group or two consecutive groups (e.g. 3+4, not 3+5). |
-| **Sect** | Camarilla, Sabbat, Anarch, Independent, or Laibon |
-| **Title** | Some vampires have innate titles granting votes in referendums |
+| **Group**       | 1-7+. Entire crypt must use one group or two consecutive groups (e.g. 3+4, not 3+5).    |
+| **Sect**        | Camarilla, Sabbat, Anarch, Independent, or Laibon                                       |
+| **Title**       | Some vampires have innate titles granting votes in referendums                          |
 
 **Advanced vampires:** Can merge with base version using 4 transfers + 1 pool. Merged vampire uses advanced card's text/capacity/disciplines but retains counters and cards from the base.
 
 ### 2.2 Crypt Cards -- Imbued
 
 Mortal hunters treated as mortal allies (not vampires):
+
 - 1 strength, 1 bleed by default
 - Life = card cost (instead of capacity)
 - Creeds instead of clans; Virtues instead of disciplines (single level only)
@@ -42,41 +43,54 @@ Mortal hunters treated as mortal allies (not vampires):
 Drawn into hand (default size 7). Playing a card from hand immediately draws a replacement.
 
 #### Master Cards
+
 Played by the Methuselah during the **Master Phase**. One master phase action per turn by default.
+
 - **Trifle:** If successfully played, gain an additional master phase action.
 - **Out-of-Turn Master:** Played during another player's turn; costs 1 master phase action on your next turn.
 
 #### Action Cards
+
 Played by a ready, unlocked minion. Only one action card per action. Burned if blocked.
 
 #### Action Modifier Cards
+
 Played by the acting minion to modify their action (e.g. increase bleed, add stealth). Same card name cannot be played more than once per action.
 
 #### Reaction Cards
+
 Played by a ready, unlocked minion of another Methuselah in response to an action. Does NOT lock the reacting minion. Same card name limit: once per action per minion.
 
 #### Combat Cards
+
 Played during combat for maneuvers, strikes, presses, damage prevention, etc.
 
 #### Equipment Cards
+
 Placed on a minion via equip action (undirected, +1 stealth). Stays until burned or transferred. Burned when host is burned. Can be transferred between controlled minions as an action.
 
 #### Retainer Cards
+
 Placed on a minion via employ retainer action (undirected, +1 stealth). Have life counters. Cannot be transferred. Burned when life reaches 0 or host is burned.
 
 #### Ally Cards
+
 Independent minions recruited via recruit ally action (undirected, +1 stealth). Enter play ready with life counters. Cannot act the turn recruited. Burned at 0 life.
 
 #### Political Action Cards
+
 Part of a political action (undirected, +1 stealth, vampires only). If not blocked, calls a referendum. Can also be burned during a referendum for 1 vote (max 1 per Methuselah per referendum).
 
 #### Conviction Cards (Imbued only)
+
 Played during Unlock Phase (not master/minion/discard). One per imbued per unlock phase. Can play from hand or ash heap. Max 5 conviction per imbued.
 
 #### Power Cards (Imbued only)
+
 Acquired as a +1 stealth action. No duplicate powers per imbued.
 
 #### Event Cards
+
 Played during Discard Phase as a discard phase action. Max one event per discard phase. Each event once per game globally.
 
 ---
@@ -84,12 +98,14 @@ Played during Discard Phase as a discard phase action. Max one event per discard
 ## 3. Key Concepts
 
 ### 3.1 Pool
+
 - Start with **30 pool**
 - Pool = life total. At **0 pool**, you are ousted.
 - Spent to: bring vampires into play, play master cards, lost when bled
 - Gained from: ousting prey (+6), holding the Edge (+1/unlock phase), card effects
 
 ### 3.2 Blood
+
 - Counters on vampires (same physical tokens as pool)
 - Cannot exceed capacity; excess returned to blood bank
 - Spent to: play cards, mend damage, pay for actions
@@ -97,9 +113,11 @@ Played during Discard Phase as a discard phase action. Max one event per discard
 - Vampire at **0 blood** must hunt as mandatory action
 
 ### 3.3 The Blood Bank
+
 Shared unlimited supply of counters.
 
 ### 3.4 The Edge
+
 - Starts uncontrolled in center of table
 - **Gained** when your minion performs a successful bleed of 1+ pool
 - **Unlock Phase:** If you hold it, gain 1 pool from blood bank
@@ -109,37 +127,38 @@ Shared unlimited supply of counters.
 ### 3.5 Disciplines
 
 Each discipline has two levels:
+
 - **Basic (Inferior):** Square icon. Use plain text effect.
 - **Superior:** Diamond icon. Use either plain or bold text effect.
 
-| Discipline | Abbr | Discipline | Abbr |
-|---|---|---|---|
-| Abombwe | abo | Obfuscate | obf |
-| Animalism | ani | Oblivion | obl |
-| Auspex | aus | Obtenebration | obt |
-| Blood Sorcery | blo | Potence | pot |
-| Celerity | cel | Presence | pre |
-| Chimerstry | chi | Protean | pro |
-| Daimoinon | dai | Quietus | qui |
-| Dementation | dem | Sanguinus | san |
-| Dominate | dom | Serpentis | ser |
-| Fortitude | for | Spiritus | spi |
-| Melpominee | mel | Temporis | tem |
-| Mytherceria | myt | Thanatosis | thn |
-| Necromancy | nec | Thaumaturgy | tha |
-| Obeah | obe | Valeren | val |
-| | | Visceratika | vis |
-| | | Vicissitude | vic |
+| Discipline    | Abbr | Discipline    | Abbr |
+| ------------- | ---- | ------------- | ---- |
+| Abombwe       | abo  | Obfuscate     | obf  |
+| Animalism     | ani  | Oblivion      | obl  |
+| Auspex        | aus  | Obtenebration | obt  |
+| Blood Sorcery | blo  | Potence       | pot  |
+| Celerity      | cel  | Presence      | pre  |
+| Chimerstry    | chi  | Protean       | pro  |
+| Daimoinon     | dai  | Quietus       | qui  |
+| Dementation   | dem  | Sanguinus     | san  |
+| Dominate      | dom  | Serpentis     | ser  |
+| Fortitude     | for  | Spiritus      | spi  |
+| Melpominee    | mel  | Temporis      | tem  |
+| Mytherceria   | myt  | Thanatosis    | thn  |
+| Necromancy    | nec  | Thaumaturgy   | tha  |
+| Obeah         | obe  | Valeren       | val  |
+|               |      | Visceratika   | vis  |
+|               |      | Vicissitude   | vic  |
 
 ### 3.6 Sects and Titles
 
-| Sect | Titles (votes) |
-|---|---|
-| **Camarilla** | Primogen (1), Prince (2), Justicar (3), Inner Circle (4) |
-| **Sabbat** | Bishop (1), Archbishop (2), Cardinal (3), Regent (4), Priscus (special) |
-| **Anarch** | Baron (2) |
-| **Independent** | Per card text |
-| **Laibon** | Functionally similar to Independent |
+| Sect            | Titles (votes)                                                          |
+| --------------- | ----------------------------------------------------------------------- |
+| **Camarilla**   | Primogen (1), Prince (2), Justicar (3), Inner Circle (4)                |
+| **Sabbat**      | Bishop (1), Archbishop (2), Cardinal (3), Regent (4), Priscus (special) |
+| **Anarch**      | Baron (2)                                                               |
+| **Independent** | Per card text                                                           |
+| **Laibon**      | Functionally similar to Independent                                     |
 
 **Prisci Block:** All ready prisci collectively control 3 votes. Direction determined by sub-referendum among prisci controllers.
 
@@ -149,11 +168,11 @@ Each discipline has two levels:
 
 ### 4.1 Deck Construction
 
-| Rule | Value |
-|---|---|
-| Crypt size | 12 minimum, no maximum |
-| Library size | 60 minimum, 90 maximum |
-| Copies per card | Unlimited |
+| Rule              | Value                                  |
+| ----------------- | -------------------------------------- |
+| Crypt size        | 12 minimum, no maximum                 |
+| Library size      | 60 minimum, 90 maximum                 |
+| Copies per card   | Unlimited                              |
 | Group restriction | Single group or two consecutive groups |
 
 ### 4.2 Initial Setup
@@ -168,6 +187,7 @@ Each discipline has two levels:
 ### 4.3 Play Zones
 
 Per Methuselah:
+
 - **Uncontrolled Region:** Face-down vampires accumulating pool/blood
 - **Ready Region:** Controlled minions able to act
 - **Torpor Region:** Wounded vampires (face-up, not ready)
@@ -175,6 +195,7 @@ Per Methuselah:
 - **Hand:** Library cards (default size 7)
 
 Shared:
+
 - **Blood Bank:** Unlimited counter supply
 - **The Edge:** Token in center
 
@@ -206,33 +227,34 @@ Ready, unlocked minions perform actions. **Taking an action locks the minion.** 
 
 **Mandatory:** Vampire at 0 blood must hunt before optional actions.
 
-| Action | Type | Stealth | Who | Notes |
-|---|---|---|---|---|
-| Bleed | Directed (at prey) | 0 | Any minion | Default: 1. Max once/minion/turn. |
-| Hunt | Undirected | +1 | Vampires | Gain 1 blood. Mandatory at 0 blood. |
-| Equip | Undirected | +1 | Any minion | Play or transfer equipment. |
-| Employ Retainer | Undirected | +1 | Any minion | Play retainer from hand. |
-| Recruit Ally | Undirected | +1 | Any minion | Ally can't act this turn. |
-| Political Action | Undirected | +1 | Vampires | Calls referendum if unblocked. Once/vampire/turn. |
-| Leave Torpor | Varies | Varies | Torpored vampires | Costs 2 blood. |
-| Rescue from Torpor | Varies | Varies | Ready vampires | Costs 2 blood (shareable). |
-| Diablerise | Varies | Varies | Ready vampires | Targets torpored vampire. |
-| Become Anarch | Undirected | +1 | Non-Anarch untitled | 2 blood (1 if controller has another ready Anarch). |
-| Action Card | Per card | Per card | Per card | One action card per action. |
+| Action             | Type               | Stealth  | Who                 | Notes                                               |
+| ------------------ | ------------------ | -------- | ------------------- | --------------------------------------------------- |
+| Bleed              | Directed (at prey) | 0        | Any minion          | Default: 1. Max once/minion/turn.                   |
+| Hunt               | Undirected         | +1       | Vampires            | Gain 1 blood. Mandatory at 0 blood.                 |
+| Equip              | Undirected         | +1       | Any minion          | Play or transfer equipment.                         |
+| Employ Retainer    | Undirected         | +1       | Any minion          | Play retainer from hand.                            |
+| Recruit Ally       | Undirected         | +1       | Any minion          | Ally can't act this turn.                           |
+| Political Action   | Undirected         | +1       | Vampires            | Calls referendum if unblocked. Once/vampire/turn.   |
+| Leave Torpor       | Varies             | Varies   | Torpored vampires   | Costs 2 blood.                                      |
+| Rescue from Torpor | Varies             | Varies   | Ready vampires      | Costs 2 blood (shareable).                          |
+| Diablerise         | Varies             | Varies   | Ready vampires      | Targets torpored vampire.                           |
+| Become Anarch      | Undirected         | +1       | Non-Anarch untitled | 2 blood (1 if controller has another ready Anarch). |
+| Action Card        | Per card           | Per card | Per card            | One action card per action.                         |
 
 ### 5.4 Influence Phase
 
 **Transfers per turn:**
+
 - Turn 1 (1st player): 1 transfer
 - Turn 2 (2nd player): 2 transfers
 - Turn 3 (3rd player): 3 transfers
 - Turn 4+: 4 transfers
 
-| Cost | Effect |
-|---|---|
-| 1 transfer | Move 1 pool from your pool to an uncontrolled vampire (as blood) |
-| 2 transfers | Move 1 blood from an uncontrolled vampire back to your pool |
-| 4 transfers + 1 pool | Move vampire from crypt to uncontrolled region |
+| Cost                 | Effect                                                           |
+| -------------------- | ---------------------------------------------------------------- |
+| 1 transfer           | Move 1 pool from your pool to an uncontrolled vampire (as blood) |
+| 2 transfers          | Move 1 blood from an uncontrolled vampire back to your pool      |
+| 4 transfers + 1 pool | Move vampire from crypt to uncontrolled region                   |
 
 **Bringing into play:** When an uncontrolled vampire has blood >= capacity, move them face-up to ready region, unlocked. Excess blood drains. Can happen at any point during influence phase.
 
@@ -291,15 +313,15 @@ Occurs when an action is blocked or forced by card effect. One or more rounds:
 
 ### 7.2 Strike Types
 
-| Strike | Range | Effect |
-|---|---|---|
-| Hand strike | Close | Damage = strength (default 1) |
-| Dodge | Any | Take no damage, protected from opponent's strike effects |
-| Combat Ends | Any | End combat immediately. Resolves before First Strike. Not dodgeable. |
-| Steal Blood/Life | Per card | Move counters. Not damage -- cannot be prevented. |
-| Destroy Equipment | Per card | Burn one of opponent's equipment |
-| Steal Equipment | Per card | Take one of opponent's equipment |
-| First Strike | Per card | Resolves before normal strikes. Cannot resolve before Combat Ends. Dodgeable. |
+| Strike            | Range    | Effect                                                                        |
+| ----------------- | -------- | ----------------------------------------------------------------------------- |
+| Hand strike       | Close    | Damage = strength (default 1)                                                 |
+| Dodge             | Any      | Take no damage, protected from opponent's strike effects                      |
+| Combat Ends       | Any      | End combat immediately. Resolves before First Strike. Not dodgeable.          |
+| Steal Blood/Life  | Per card | Move counters. Not damage -- cannot be prevented.                             |
+| Destroy Equipment | Per card | Burn one of opponent's equipment                                              |
+| Steal Equipment   | Per card | Take one of opponent's equipment                                              |
+| First Strike      | Per card | Resolves before normal strikes. Cannot resolve before Combat Ends. Dodgeable. |
 
 **Additional strikes:** After first pair resolves, either combatant may announce additional strike (one source per round). Acting minion decides first.
 
@@ -344,15 +366,15 @@ Occurs when an action is blocked or forced by card effect. One or more rounds:
 
 ### 8.2 Vote Sources
 
-| Source | Votes |
-|---|---|
-| Primogen | 1 |
-| Prince/Baron/Archbishop | 2 |
-| Justicar/Cardinal | 3 |
-| Inner Circle/Regent | 4 |
-| Prisci Block (collective) | 3 |
+| Source                         | Votes                           |
+| ------------------------------ | ------------------------------- |
+| Primogen                       | 1                               |
+| Prince/Baron/Archbishop        | 2                               |
+| Justicar/Cardinal              | 3                               |
+| Inner Circle/Regent            | 4                               |
+| Prisci Block (collective)      | 3                               |
 | Political Action card (burned) | 1 (max 1/Methuselah/referendum) |
-| The Edge (burned) | 1 |
+| The Edge (burned)              | 1                               |
 
 Only **ready** vampires can vote. Locked vampires can still vote. Torpored vampires cannot.
 
@@ -361,23 +383,28 @@ Only **ready** vampires can vote. Locked vampires can still vote. Torpored vampi
 ## 9. Victory Conditions
 
 ### 9.1 Ousting
+
 Pool reaches 0 -> ousted. All controlled cards burned. Predator receives **1 VP + 6 pool**.
 
 If player and prey ousted simultaneously: player earns VP but not 6 pool.
 
 ### 9.2 Last Standing
+
 Last surviving Methuselah receives **1 additional VP**.
 
 ### 9.3 Winner
+
 Most Victory Points wins (even if ousted). Ties = draw among tied players.
 
 ### 9.4 Withdrawal (Optional)
+
 - Eligible: library exhausted, <7 cards in hand at unlock phase
 - Declare during unlock phase
 - Until next unlock: no combat, no blood/pool lost or spent
 - Success: earn 1 VP, removed from game. Predator gets nothing.
 
 ### 9.5 Tournament Time
+
 - 2-hour minimum rounds
 - Time expires -> finish current turn, each other player gets one final turn
 - Players still in game receive 0.5 VP
@@ -387,14 +414,17 @@ Most Victory Points wins (even if ousted). Ties = draw among tied players.
 ## 10. Special Rules
 
 ### 10.1 Contested Cards
+
 Same unique card controlled by multiple Methuselahs -> all copies face-down, out of play. Pay 1 pool per unlock phase or yield (copy burned permanently). Last remaining copy unlocks.
 
 ### 10.2 Lock/Unlock
+
 - Locked: cannot act or block. CAN vote.
 - Unlocked: can act and block.
 - All cards unlock at start of controlling Methuselah's unlock phase.
 
 ### 10.3 Card Play Limits
+
 - Same action modifier: once per action per minion
 - Same reaction card: once per action per minion
 - Same action card: once per turn per minion
@@ -402,9 +432,11 @@ Same unique card controlled by multiple Methuselahs -> all copies face-down, out
 - One additional strike source per round
 
 ### 10.4 Hand Management
+
 - Default hand size: 7
 - Draw replacement immediately when playing from hand
 - Empty library: no draws, eligible for withdrawal (no auto-loss)
 
 ### 10.5 Burn Option
+
 Some cards have burn option icon. During unlock phase, if no ready minion meets card requirements, may discard and draw replacement. Max one per unlock phase.

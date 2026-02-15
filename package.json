@@ -13,6 +13,7 @@
     "lint:prettier": "prettier --check .",
     "lint:typescript": "tsc --noEmit",
     "seed": "tsx scripts/seed-redis.ts",
+    "seed:flush": "tsx scripts/seed-redis.ts --flush",
     "start": "next start"
   },
   "dependencies": {
