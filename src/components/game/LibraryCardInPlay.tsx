@@ -2,11 +2,13 @@
 
 import AddIcon from '@mui/icons-material/Add'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import GpsFixedIcon from '@mui/icons-material/GpsFixed'
 import LockIcon from '@mui/icons-material/Lock'
 import LockOpenIcon from '@mui/icons-material/LockOpen'
 import RemoveIcon from '@mui/icons-material/Remove'
 import Badge from '@mui/material/Badge'
 import Box from '@mui/material/Box'
+import Chip from '@mui/material/Chip'
 import Collapse from '@mui/material/Collapse'
 import IconButton from '@mui/material/IconButton'
 import Paper from '@mui/material/Paper'
@@ -18,13 +20,16 @@ import { useState } from 'react'
 import CardTypeIcon from '$/components/CardTypeIcon'
 import ClanIcon from '$/components/ClanIcon'
 import { getCardById } from '$/data/cards'
+import useLongPress from '$/hooks/useLongPress'
 import type { LibraryCardInPlay as LibraryCardInPlayType } from '$/types/game'
 
 type LibraryCardInPlayProps = {
   libraryCard: LibraryCardInPlayType
   selected?: boolean
   showImages?: boolean
+  targetName?: string
   onSelect?: (instanceId: string) => void
+  onLongPress?: (instanceId: string) => void
   onToggleLock?: (instanceId: string) => void
   onAdjustLife?: (instanceId: string, delta: number) => void
 }
@@ -33,11 +38,17 @@ const LibraryCardInPlayComponent = ({
   libraryCard,
   selected,
   showImages,
+  targetName,
   onSelect,
+  onLongPress,
   onToggleLock,
   onAdjustLife,
 }: LibraryCardInPlayProps) => {
   const [expanded, setExpanded] = useState(false)
+  const cardLongPress = useLongPress({
+    onPress: () => onSelect?.(libraryCard.instanceId),
+    onLongPress: () => onLongPress?.(libraryCard.instanceId),
+  })
   const card = getCardById(libraryCard.cardId)
   const name = card?.name ?? 'Unknown'
   const isAllyOrRetainer = card?.type === 'library' && card.types.some((t) => t === 'Ally' || t === 'Retainer')
@@ -79,7 +90,7 @@ const LibraryCardInPlayComponent = ({
           component="img"
           src={card?.url}
           alt={name}
-          onClick={() => onSelect?.(libraryCard.instanceId)}
+          {...cardLongPress}
           sx={{
             width: 120,
             aspectRatio: '48/67',
@@ -127,7 +138,7 @@ const LibraryCardInPlayComponent = ({
         >
           <Paper
             variant="outlined"
-            onClick={() => onSelect?.(libraryCard.instanceId)}
+            {...cardLongPress}
             sx={{
               p: 1.5,
               maxWidth: 200,
@@ -156,6 +167,11 @@ const LibraryCardInPlayComponent = ({
                     {card.poolCost} pool
                   </Typography>
                 )}
+              </Stack>
+            )}
+            {targetName && (
+              <Stack direction="row" sx={{ mt: 0.5 }}>
+                <Chip icon={<GpsFixedIcon />} label={targetName} size="small" color="error" variant="outlined" />
               </Stack>
             )}
             {card?.cardText && (

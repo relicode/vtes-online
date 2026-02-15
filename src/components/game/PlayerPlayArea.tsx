@@ -1,6 +1,14 @@
 'use client'
 
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Dialog from '@mui/material/Dialog'
+import DialogContent from '@mui/material/DialogContent'
+import DialogTitle from '@mui/material/DialogTitle'
+import List from '@mui/material/List'
+import ListItemButton from '@mui/material/ListItemButton'
+import ListItemText from '@mui/material/ListItemText'
+import ListSubheader from '@mui/material/ListSubheader'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { useConfirm } from 'material-ui-confirm'
@@ -25,6 +33,8 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
   const confirm = useConfirm()
   const [selectedInPlay, setSelectedInPlay] = useState<Set<string>>(new Set())
   const [showImages, setShowImages] = useState(false)
+  const [targetPickerFor, setTargetPickerFor] = useState<string | undefined>()
+  const [longPressCard, setLongPressCard] = useState<string | undefined>()
 
   const toggleInPlay = (instanceId: string) => {
     setSelectedInPlay((prev) => {
@@ -77,6 +87,48 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
     performGameAction(gameId, playerId, { type: 'toggleLock', instanceId })
   }
 
+  const handleLongPressLock = (instanceId: string) => {
+    setLongPressCard(instanceId)
+  }
+
+  const longPressCardData = longPressCard
+    ? [...gameView.self.controlledCrypt, ...gameView.self.libraryCardsInPlay].find(
+        (c) => c.instanceId === longPressCard,
+      )
+    : undefined
+  const longPressCardName = longPressCardData ? (getCardById(longPressCardData.cardId)?.name ?? 'Unknown') : 'Unknown'
+
+  const handlePickTarget = (targetInstanceId?: string) => {
+    if (targetPickerFor) {
+      performGameAction(gameId, playerId, { type: 'setCardTarget', instanceId: targetPickerFor, targetInstanceId })
+    }
+    setTargetPickerFor(undefined)
+  }
+
+  const buildTargetList = () => {
+    type TargetEntry = { instanceId: string; cardName: string; playerName: string }
+    const groups: { playerName: string; cards: TargetEntry[] }[] = []
+
+    const addPlayer = (name: string, controlled: typeof gameView.self.controlledCrypt, library: typeof gameView.self.libraryCardsInPlay) => {
+      const cards: TargetEntry[] = []
+      for (const c of controlled) {
+        cards.push({ instanceId: c.instanceId, cardName: getCardById(c.cardId)?.name ?? 'Unknown', playerName: name })
+      }
+      for (const c of library) {
+        cards.push({ instanceId: c.instanceId, cardName: getCardById(c.cardId)?.name ?? 'Unknown', playerName: name })
+      }
+      cards.sort((a, b) => a.cardName.localeCompare(b.cardName))
+      if (cards.length > 0) groups.push({ playerName: name, cards })
+    }
+
+    addPlayer(gameView.self.name, gameView.self.controlledCrypt, gameView.self.libraryCardsInPlay)
+    for (const opp of gameView.opponents) {
+      addPlayer(opp.name, opp.controlledCrypt, opp.libraryCardsInPlay)
+    }
+
+    return groups
+  }
+
   const handleAdjustMinionBlood = (minionInstanceId: string, delta: number) => {
     performGameAction(gameId, playerId, { type: 'adjustMinionCounters', minionInstanceId, delta })
   }
@@ -87,6 +139,17 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
 
   const handleAdjustLibraryCardLife = (instanceId: string, delta: number) => {
     performGameAction(gameId, playerId, { type: 'adjustLibraryCardCounters', instanceId, delta })
+  }
+
+  const resolveTargetName = (targetInstanceId?: string) => {
+    if (!targetInstanceId) return undefined
+    const allCards = [
+      ...gameView.self.controlledCrypt,
+      ...gameView.self.libraryCardsInPlay,
+      ...gameView.opponents.flatMap((o) => [...o.controlledCrypt, ...o.libraryCardsInPlay]),
+    ]
+    const target = allCards.find((c) => c.instanceId === targetInstanceId)
+    return target ? (getCardById(target.cardId)?.name ?? 'Unknown') : undefined
   }
 
   const handlePlayFromHand = (indices: number[]) => {
@@ -122,8 +185,10 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
                   libraryCard={c}
                   selected={selectedInPlay.has(c.instanceId)}
                   showImages={showImages}
+                  targetName={resolveTargetName(c.target)}
                   onSelect={toggleInPlay}
                   onToggleLock={handleToggleLock}
+                  onLongPress={handleLongPressLock}
                   onAdjustLife={handleAdjustLibraryCardLife}
                 />
               ))}
@@ -137,8 +202,10 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
                   cryptCard={m}
                   selected={selectedInPlay.has(m.instanceId)}
                   showImages={showImages}
+                  targetName={resolveTargetName(m.target)}
                   onSelect={toggleInPlay}
                   onToggleLock={handleToggleLock}
+                  onLongPress={handleLongPressLock}
                   onAdjustBlood={handleAdjustMinionBlood}
                 />
               ))}
@@ -167,6 +234,68 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
 
         <PlayerHand hand={gameView.self.hand} showImages={showImages} onPlay={handlePlayFromHand} />
       </Stack>
+
+      <Dialog open={longPressCard !== undefined} onClose={() => setLongPressCard(undefined)} fullWidth maxWidth="xs">
+        <DialogTitle>{longPressCardName}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1}>
+            {['Directed Action', 'Bleed', 'Hunt'].map((action) => (
+              <Button key={action} variant="outlined" fullWidth>
+                {action}
+              </Button>
+            ))}
+            <Button
+              variant="outlined"
+              fullWidth
+              onClick={() => {
+                const id = longPressCard
+                setLongPressCard(undefined)
+                setTargetPickerFor(id)
+              }}
+            >
+              Target
+            </Button>
+          </Stack>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={targetPickerFor !== undefined} onClose={() => setTargetPickerFor(undefined)} fullWidth maxWidth="xs">
+        <DialogTitle>Select Target</DialogTitle>
+        <DialogContent>
+          {(() => {
+            const sourceCard = targetPickerFor
+              ? [...gameView.self.controlledCrypt, ...gameView.self.libraryCardsInPlay].find(
+                  (c) => c.instanceId === targetPickerFor,
+                )
+              : undefined
+            const hasTarget = sourceCard?.target !== undefined
+
+            return (
+              <List dense>
+                {hasTarget && (
+                  <ListItemButton onClick={() => handlePickTarget(undefined)}>
+                    <ListItemText primary="Clear target" primaryTypographyProps={{ color: 'error' }} />
+                  </ListItemButton>
+                )}
+                {buildTargetList().map((group) => (
+                  <Box key={group.playerName}>
+                    <ListSubheader disableSticky>{group.playerName}</ListSubheader>
+                    {group.cards.map((card) => (
+                      <ListItemButton
+                        key={card.instanceId}
+                        disabled={card.instanceId === targetPickerFor}
+                        onClick={() => handlePickTarget(card.instanceId)}
+                      >
+                        <ListItemText primary={card.cardName} />
+                      </ListItemButton>
+                    ))}
+                  </Box>
+                ))}
+              </List>
+            )
+          })()}
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

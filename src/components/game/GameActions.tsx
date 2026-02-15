@@ -83,9 +83,6 @@ const GameActions = ({
       }}
     >
       <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
-        <Typography variant="caption" sx={{ fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-          Player
-        </Typography>
         <Tooltip title={showImages ? 'Show text cards' : 'Show card images'}>
           <IconButton
             size="small"

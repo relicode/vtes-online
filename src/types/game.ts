@@ -17,6 +17,7 @@ type ControlledCryptCard = {
   locked: boolean
   inTorpor: boolean
   attachedTo?: string // instanceId of another card in play
+  target?: string // instanceId of the targeted card
 }
 
 type UncontrolledCryptCard = {
@@ -39,6 +40,7 @@ type LibraryCardInPlay = {
   attachedTo?: string // instanceId of card this is attached to (e.g. equipped minion)
   counters: number
   locked: boolean
+  target?: string // instanceId of the targeted card
 }
 
 // ---------------------------------------------------------------------------

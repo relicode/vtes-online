@@ -320,6 +320,36 @@ const handleAdjustLibraryCardCounters = (
   }
 }
 
+const handleSetCardTarget = (
+  state: GameState,
+  playerId: string,
+  instanceId: string,
+  targetInstanceId?: string
+): HandlerResult => {
+  const player = state.players[playerId]
+  const card =
+    player.controlledCrypt.find((m) => m.instanceId === instanceId) ??
+    player.libraryCardsInPlay.find((c) => c.instanceId === instanceId)
+  if (!card) return { success: false, error: 'Card not found' }
+  card.target = targetInstanceId
+  const sourceName = getCardById(card.cardId)?.name ?? 'a card'
+  if (!targetInstanceId) {
+    return { success: true, state, description: `cleared target from ${sourceName}` }
+  }
+  // Look up target card name across all players
+  let targetName = 'a card'
+  for (const p of Object.values(state.players)) {
+    const found =
+      p.controlledCrypt.find((m) => m.instanceId === targetInstanceId) ??
+      p.libraryCardsInPlay.find((c) => c.instanceId === targetInstanceId)
+    if (found) {
+      targetName = getCardById(found.cardId)?.name ?? 'a card'
+      break
+    }
+  }
+  return { success: true, state, description: `targeted ${targetName} with ${sourceName}` }
+}
+
 // ---------------------------------------------------------------------------
 // Main dispatcher
 // ---------------------------------------------------------------------------
@@ -354,6 +384,8 @@ const applyGameAction = (state: GameState, playerId: string, action: GameAction)
       return handleTrashFromPlay(state, playerId, action.instanceIds)
     case 'adjustLibraryCardCounters':
       return handleAdjustLibraryCardCounters(state, playerId, action.instanceId, action.delta)
+    case 'setCardTarget':
+      return handleSetCardTarget(state, playerId, action.instanceId, action.targetInstanceId)
   }
 }
 

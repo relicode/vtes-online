@@ -22,6 +22,7 @@ type ToggleTorpor = { type: 'toggleTorpor'; minionInstanceId: string }
 type PlayFromHand = { type: 'playFromHand'; indices: number[] }
 type TrashFromPlay = { type: 'trashFromPlay'; instanceIds: string[] }
 type AdjustLibraryCardCounters = { type: 'adjustLibraryCardCounters'; instanceId: string; delta: number }
+type SetCardTarget = { type: 'setCardTarget'; instanceId: string; targetInstanceId?: string }
 
 type GameAction =
   | DrawFromLibrary
@@ -38,6 +39,7 @@ type GameAction =
   | PlayFromHand
   | TrashFromPlay
   | AdjustLibraryCardCounters
+  | SetCardTarget
 
 type CardZone = 'hand' | 'ashHeap' | 'library' | 'crypt' | 'removed'
 
