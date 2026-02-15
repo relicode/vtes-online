@@ -168,4 +168,11 @@ const performGameAction = async (
   return { success: true, data: entry }
 }
 
-export { createGame, getGame, getGameView, joinGame, performGameAction }
+const getActionLog = async (gameId: string): Promise<ActionResult<ActionLogEntry[]>> => {
+  const exists = await redis.exists(`game:${gameId}`)
+  if (!exists) return { success: false, error: 'Game not found' }
+  const entries = await redis.lrange(`game:${gameId}:log`, 0, 49)
+  return { success: true, data: entries.map((entry) => JSON.parse(entry) as ActionLogEntry) }
+}
+
+export { createGame, getActionLog, getGame, getGameView, joinGame, performGameAction }

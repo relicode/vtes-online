@@ -9,7 +9,6 @@ import Typography from '@mui/material/Typography'
 import { useEffect } from 'react'
 
 import type { GameSummary } from '$/types/game'
-import ActionLog from './ActionLog'
 import useGameEventStream from './GameEventStream'
 
 type PublicGameContentProps = {
@@ -72,8 +71,6 @@ const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => 
           </Paper>
         ))}
       </Stack>
-
-      <ActionLog entries={game.actionLog} />
     </Box>
   )
 }

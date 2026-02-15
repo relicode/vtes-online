@@ -1,20 +1,15 @@
-import Box from '@mui/material/Box'
-import Divider from '@mui/material/Divider'
 import type { ReactNode } from 'react'
+
+import GameLayoutShell from './GameLayoutShell'
 
 type GameLayoutProps = {
   public: ReactNode
   player: ReactNode
+  log: ReactNode
 }
 
-const GameLayout = ({ public: publicSlot, player }: GameLayoutProps) => {
-  return (
-    <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-      <Box sx={{ flex: '1 1 0', minWidth: 0, overflow: 'auto' }}>{publicSlot}</Box>
-      <Divider orientation="vertical" flexItem />
-      <Box sx={{ flex: '1 1 0', minWidth: 0, overflow: 'auto' }}>{player}</Box>
-    </Box>
-  )
+const GameLayout = ({ public: publicSlot, player, log }: GameLayoutProps) => {
+  return <GameLayoutShell public={publicSlot} player={player} log={log} />
 }
 
 export default GameLayout

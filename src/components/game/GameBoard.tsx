@@ -1,8 +1,6 @@
 'use client'
 
 import Badge from '@mui/material/Badge'
-import Box from '@mui/material/Box'
-import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
@@ -22,15 +20,12 @@ type GameBoardProps = {
 }
 
 const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
-  const isMyTurn = gameView.turn.activePlayer === gameView.self.playerId
-  const activePlayerName = gameView.opponents.find((o) => o.playerId === gameView.turn.activePlayer)?.name
-
   const handleToggleLock = (minionInstanceId: string) => {
     performGameAction(gameId, playerId, { type: 'toggleMinionLock', minionInstanceId })
   }
 
   return (
-    <Box>
+    <Stack spacing={2}>
       <GameActions
         gameId={gameId}
         playerId={playerId}
@@ -40,33 +35,25 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
         pool={gameView.self.pool}
       />
 
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ my: 2 }}>
-        <Chip label={`Round ${gameView.round} / Turn ${gameView.turnCount}`} color="primary" />
-        <Chip
-          label={isMyTurn ? 'Your Turn' : `Waiting for ${activePlayerName}`}
-          color={isMyTurn ? 'success' : 'default'}
-        />
-      </Stack>
-
-      <Typography variant="h6" sx={{ mb: 1 }}>
-        Cards in Play
-      </Typography>
-      <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', mb: 2 }}>
-        {gameView.self.minions.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            No minions in play.
-          </Typography>
-        ) : (
-          gameView.self.minions.map((m) => <MinionCard key={m.instanceId} minion={m} onToggleLock={handleToggleLock} />)
-        )}
-      </Stack>
+      <div>
+        <Typography variant="h6">Cards in Play</Typography>
+        <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: 'wrap', mt: 1 }}>
+          {gameView.self.minions.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No minions in play.
+            </Typography>
+          ) : (
+            gameView.self.minions.map((m) => (
+              <MinionCard key={m.instanceId} minion={m} onToggleLock={handleToggleLock} />
+            ))
+          )}
+        </Stack>
+      </div>
 
       {gameView.self.uncontrolled.length > 0 && (
-        <>
-          <Typography variant="h6" sx={{ mb: 1 }}>
-            Uncontrolled Region ({gameView.self.uncontrolled.length})
-          </Typography>
-          <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', mb: 2 }}>
+        <div>
+          <Typography variant="h6">Uncontrolled Region ({gameView.self.uncontrolled.length})</Typography>
+          <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: 'wrap', mt: 1 }}>
             {gameView.self.uncontrolled.map((u) => {
               const card = getCardById(u.cardId)
               const capacity = card?.type === 'crypt' ? card.capacity : 0
@@ -89,13 +76,13 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
               )
             })}
           </Stack>
-        </>
+        </div>
       )}
 
-      <Divider sx={{ my: 2 }} />
+      <Divider />
 
       <PlayerHand hand={gameView.self.hand} />
-    </Box>
+    </Stack>
   )
 }
 
