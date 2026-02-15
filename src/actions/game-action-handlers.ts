@@ -113,8 +113,40 @@ const handleMoveCard = (
   return { success: true, state, description: `moved a card from ${from} to ${to}` }
 }
 
+const influenceUncontrolled = (state: GameState): string[] => {
+  const player = state.players[state.turn.activePlayer]
+  const influenced: string[] = []
+
+  for (let i = player.uncontrolled.length - 1; i >= 0; i--) {
+    const u = player.uncontrolled[i]
+    const card = getCardById(u.cardId)
+    const capacity = card?.type === 'crypt' ? card.capacity : 0
+    if (capacity > 0 && u.blood >= capacity) {
+      player.uncontrolled.splice(i, 1)
+      player.minions.push({
+        instanceId: u.instanceId,
+        cardId: u.cardId,
+        counters: u.blood,
+        locked: false,
+        inTorpor: false,
+      })
+      influenced.push(card?.name ?? 'Unknown')
+    }
+  }
+
+  return influenced
+}
+
 const handleAdvancePhase = (state: GameState): HandlerResult => {
   const currentPhaseIdx = PHASES.indexOf(state.turn.phase)
+
+  if (state.turn.phase === 'influence') {
+    const influenced = influenceUncontrolled(state)
+    const suffix = influenced.length > 0 ? ` (${influenced.join(', ')} moved to controlled)` : ''
+    state.turn.phase = PHASES[currentPhaseIdx + 1]
+    return { success: true, state, description: `advanced to ${state.turn.phase} phase${suffix}` }
+  }
+
   if (currentPhaseIdx < PHASES.length - 1) {
     state.turn.phase = PHASES[currentPhaseIdx + 1]
     return { success: true, state, description: `advanced to ${state.turn.phase} phase` }
@@ -169,6 +201,84 @@ const handleInfluence = (state: GameState, playerId: string, minionInstanceId: s
   return { success: true, state, description: 'moved a minion from uncontrolled to controlled' }
 }
 
+const handlePlayFromHand = (state: GameState, playerId: string, indices: number[]): HandlerResult => {
+  const player = state.players[playerId]
+  const unique = [...new Set(indices)]
+  if (unique.some((i) => i < 0 || i >= player.hand.length)) {
+    return { success: false, error: 'Invalid card index' }
+  }
+
+  const sorted = unique.sort((a, b) => b - a)
+  const names: string[] = []
+
+  for (const idx of sorted) {
+    const cardId = player.hand[idx]
+    player.hand.splice(idx, 1)
+    const card = getCardById(cardId)
+    names.push(card?.name ?? 'Unknown')
+
+    if (card?.type === 'crypt') {
+      player.minions.push({
+        instanceId: crypto.randomUUID(),
+        cardId,
+        counters: 0,
+        locked: false,
+        inTorpor: false,
+      })
+    } else {
+      player.libraryCardsInPlay.push({
+        instanceId: crypto.randomUUID(),
+        cardId,
+        counters: 0,
+        locked: false,
+      })
+    }
+  }
+
+  return { success: true, state, description: `played ${names.join(', ')}` }
+}
+
+const handleTrashFromPlay = (state: GameState, playerId: string, instanceIds: string[]): HandlerResult => {
+  const player = state.players[playerId]
+
+  // Validate all IDs exist before mutating
+  for (const instanceId of instanceIds) {
+    const found =
+      player.minions.some((m) => m.instanceId === instanceId) ||
+      player.libraryCardsInPlay.some((c) => c.instanceId === instanceId) ||
+      player.uncontrolled.some((u) => u.instanceId === instanceId)
+    if (!found) return { success: false, error: `Card ${instanceId} not found in play` }
+  }
+
+  const names: string[] = []
+  for (const instanceId of instanceIds) {
+    const minionIdx = player.minions.findIndex((m) => m.instanceId === instanceId)
+    if (minionIdx !== -1) {
+      const [minion] = player.minions.splice(minionIdx, 1)
+      player.ashHeap.push(minion.cardId)
+      names.push(getCardById(minion.cardId)?.name ?? 'Unknown')
+      continue
+    }
+
+    const libIdx = player.libraryCardsInPlay.findIndex((c) => c.instanceId === instanceId)
+    if (libIdx !== -1) {
+      const [card] = player.libraryCardsInPlay.splice(libIdx, 1)
+      player.ashHeap.push(card.cardId)
+      names.push(getCardById(card.cardId)?.name ?? 'Unknown')
+      continue
+    }
+
+    const uncontrolledIdx = player.uncontrolled.findIndex((u) => u.instanceId === instanceId)
+    if (uncontrolledIdx !== -1) {
+      const [minion] = player.uncontrolled.splice(uncontrolledIdx, 1)
+      player.ashHeap.push(minion.cardId)
+      names.push(getCardById(minion.cardId)?.name ?? 'Unknown')
+    }
+  }
+
+  return { success: true, state, description: `sent ${names.join(', ')} to ash heap` }
+}
+
 const handleToggleTorpor = (state: GameState, playerId: string, minionInstanceId: string): HandlerResult => {
   const player = state.players[playerId]
   const minion = player.minions.find((m) => m.instanceId === minionInstanceId)
@@ -209,6 +319,10 @@ const applyGameAction = (state: GameState, playerId: string, action: GameAction)
       return handleInfluence(state, playerId, action.minionInstanceId)
     case 'toggleTorpor':
       return handleToggleTorpor(state, playerId, action.minionInstanceId)
+    case 'playFromHand':
+      return handlePlayFromHand(state, playerId, action.indices)
+    case 'trashFromPlay':
+      return handleTrashFromPlay(state, playerId, action.instanceIds)
   }
 }
 

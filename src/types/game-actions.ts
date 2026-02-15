@@ -19,6 +19,8 @@ type SetEdge = { type: 'setEdge'; targetPlayerId?: string }
 type AdjustUncontrolledBlood = { type: 'adjustUncontrolledBlood'; minionInstanceId: string; delta: number }
 type Influence = { type: 'influence'; minionInstanceId: string }
 type ToggleTorpor = { type: 'toggleTorpor'; minionInstanceId: string }
+type PlayFromHand = { type: 'playFromHand'; indices: number[] }
+type TrashFromPlay = { type: 'trashFromPlay'; instanceIds: string[] }
 
 type GameAction =
   | DrawFromLibrary
@@ -32,6 +34,8 @@ type GameAction =
   | AdjustUncontrolledBlood
   | Influence
   | ToggleTorpor
+  | PlayFromHand
+  | TrashFromPlay
 
 type CardZone = 'hand' | 'ashHeap' | 'library' | 'crypt' | 'removed'
 

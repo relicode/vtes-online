@@ -50,7 +50,7 @@ const GameActions = ({ gameId, playerId, phase, librarySize, cryptSize, pool }: 
   }
 
   return (
-    <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center" justifyContent="space-around">
       <Stack direction="row" alignItems="center" sx={{ gap: 0 }}>
         <IconButton
           size="small"
