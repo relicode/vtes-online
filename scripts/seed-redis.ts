@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url'
 
 import Redis from 'ioredis'
 
-import type { GameState, PlayerState, UncontrolledMinion } from '$/types/game'
+import type { GameState, MinionInPlay, PlayerState, UncontrolledMinion } from '$/types/game'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -75,38 +75,94 @@ const pickRandom = <T>(arr: T[], n: number): T[] => shuffle(arr).slice(0, n)
 const expandEntries = (entries: DeckCardEntry[]): string[] =>
   entries.flatMap((e) => Array.from({ length: e.count }, () => e.cardId))
 
-/** Build a populated PlayerState from a user and their deck. */
-const buildPlayerState = (userId: string, userName: string, deck: Deck): PlayerState => {
+/** Look up a crypt card's capacity by its string ID. */
+const cryptCapacity = (cardId: string): number => {
+  const card = crypt.find((c) => String(c.id) === cardId)
+  return card?.capacity ?? 5
+}
+
+type PlayerConfig = {
+  vampiresOut: number
+  vampiresInTorpor: number
+  lockedVampires: number
+  uncontrolledCount: number
+  pool: number
+  cardsPlayed: number
+  handSize: number
+  victoryPoints: number
+}
+
+/** Build a mid-game PlayerState shaped by a config. */
+const buildPlayerState = (
+  userId: string,
+  userName: string,
+  deck: Deck,
+  cfg: PlayerConfig,
+): PlayerState => {
   const cryptCards = shuffle(expandEntries(deck.crypt))
   const libraryCards = shuffle(expandEntries(deck.library))
 
-  // Draw 4 crypt cards into uncontrolled
-  const uncontrolled: UncontrolledMinion[] = cryptCards.splice(0, 4).map((cardId) => ({
+  // Influence vampires into play
+  const minionCards = cryptCards.splice(0, cfg.vampiresOut)
+  const minions: MinionInPlay[] = minionCards.map((cardId, i) => {
+    const capacity = cryptCapacity(cardId)
+    const inTorpor = i < cfg.vampiresInTorpor
+    // Vampires in torpor have 0 blood; others have varied blood levels
+    const counters = inTorpor ? 0 : Math.max(1, capacity - Math.floor(Math.random() * 3))
+    return {
+      instanceId: randomUUID(),
+      cardId,
+      counters,
+      locked: !inTorpor && i < cfg.lockedVampires,
+      inTorpor,
+    }
+  })
+
+  // Uncontrolled minions (influenced but not yet out)
+  const uncontrolledCards = cryptCards.splice(0, cfg.uncontrolledCount)
+  const uncontrolled: UncontrolledMinion[] = uncontrolledCards.map((cardId) => ({
     instanceId: randomUUID(),
     cardId,
-    blood: 0,
+    blood: Math.floor(Math.random() * 3),
   }))
 
-  // Draw 7 library cards into hand
-  const hand = libraryCards.splice(0, 7)
+  // Simulate cards played → ash heap
+  const ashHeap = libraryCards.splice(0, cfg.cardsPlayed)
+
+  // Draw hand
+  const hand = libraryCards.splice(0, cfg.handSize)
 
   return {
     playerId: userId,
     deckId: deck.id,
     name: userName,
-    pool: 30,
+    pool: cfg.pool,
     library: libraryCards,
     crypt: cryptCards,
     hand,
-    ashHeap: [],
+    ashHeap,
     removed: [],
-    minions: [],
+    minions,
     libraryCardsInPlay: [],
     uncontrolled,
     ousted: false,
-    victoryPoints: 0,
+    victoryPoints: cfg.victoryPoints,
   }
 }
+
+// Per-player configs simulating ~6 rounds of play
+const playerConfigs: PlayerConfig[] = [
+  // Player 1 (Toreador Bleed) — aggressive bleeder, spent pool on vampires, took some hits
+  { vampiresOut: 3, vampiresInTorpor: 0, lockedVampires: 1, uncontrolledCount: 1, pool: 17, cardsPlayed: 15, handSize: 5, victoryPoints: 0 },
+  // Player 2 (Lasombra Nocturn) — stealth-bleed, one vampire got sent to torpor
+  { vampiresOut: 3, vampiresInTorpor: 1, lockedVampires: 1, uncontrolledCount: 0, pool: 11, cardsPlayed: 18, handSize: 4, victoryPoints: 0 },
+  // Player 3 (Giovanni Powerbleed) — conservative play, healthy pool
+  { vampiresOut: 3, vampiresInTorpor: 0, lockedVampires: 0, uncontrolledCount: 0, pool: 21, cardsPlayed: 12, handSize: 6, victoryPoints: 0 },
+  // Player 4 (Brujah Presence Vote) — strong political position, gained pool from votes
+  { vampiresOut: 4, vampiresInTorpor: 0, lockedVampires: 2, uncontrolledCount: 0, pool: 24, cardsPlayed: 10, handSize: 7, victoryPoints: 0 },
+  // Player 5 (Guruhi Potence Rush) — in trouble, rushed hard but took damage
+  { vampiresOut: 2, vampiresInTorpor: 0, lockedVampires: 1, uncontrolledCount: 1, pool: 6, cardsPlayed: 20, handSize: 3, victoryPoints: 0 },
+]
 
 /** Build and store a test GameState in Redis. */
 const seedTestGame = async (
@@ -117,8 +173,9 @@ const seedTestGame = async (
   const playerOrder = gamePlayers.map((p) => p.userId)
 
   const players: Record<string, PlayerState> = {}
-  for (const p of gamePlayers) {
-    players[p.userId] = buildPlayerState(p.userId, p.userName, p.deck)
+  for (let i = 0; i < gamePlayers.length; i++) {
+    const p = gamePlayers[i]
+    players[p.userId] = buildPlayerState(p.userId, p.userName, p.deck, playerConfigs[i])
   }
 
   const game: GameState = {
@@ -127,11 +184,11 @@ const seedTestGame = async (
     status: 'active',
     createdAt: now,
     playerOrder,
-    round: 0,
-    turnCount: 0,
-    influenceCounter: 1,
-    turn: { activePlayer: playerOrder[0], phase: 'unlock' },
-    edge: {},
+    round: 6,
+    turnCount: 30,
+    influenceCounter: 4,
+    turn: { activePlayer: playerOrder[0], phase: 'minion' },
+    edge: { heldBy: playerOrder[3] },
     contestedCards: [],
     players,
   }
@@ -141,11 +198,12 @@ const seedTestGame = async (
   pipeline.sadd('game:test-game:players', ...playerOrder)
   await pipeline.exec()
 
-  console.log(`\nCreated test game with ${gamePlayers.length} players:`)
+  console.log(`\nCreated test game (round ${game.round}, ${gamePlayers.length} players):`)
   for (const p of gamePlayers) {
     const ps = players[p.userId]
+    const torporCount = ps.minions.filter((m) => m.inTorpor).length
     console.log(
-      `  ${p.userName} — crypt: ${ps.crypt.length}, library: ${ps.library.length}, hand: ${ps.hand.length}, uncontrolled: ${ps.uncontrolled.length}`,
+      `  ${p.userName} — pool: ${ps.pool}, minions: ${ps.minions.length}${torporCount ? ` (${torporCount} in torpor)` : ''}, hand: ${ps.hand.length}, ash heap: ${ps.ashHeap.length}, library: ${ps.library.length}`,
     )
   }
 }
@@ -323,8 +381,21 @@ const main = async () => {
   const redis = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379')
 
   if (flush) {
+    const keys = await redis.keys('*')
+    if (keys.length > 0) {
+      const grouped: Record<string, number> = {}
+      for (const key of keys) {
+        const prefix = key.replace(/:.*/, ':*')
+        grouped[prefix] = (grouped[prefix] ?? 0) + 1
+      }
+      console.log('Flushing Redis database:')
+      for (const [prefix, count] of Object.entries(grouped).sort()) {
+        console.log(`  ${prefix} — ${count} key${count > 1 ? 's' : ''}`)
+      }
+    } else {
+      console.log('Flushing Redis database (empty)')
+    }
     await redis.flushdb()
-    console.log('Flushed Redis database')
   }
 
   const now = new Date().toISOString()
@@ -358,8 +429,8 @@ const main = async () => {
         updatedAt: now,
       }
 
-      // Collect first deck for users 1–4 for the test game
-      if (d === 0 && u <= 4) {
+      // Collect first deck per user for the test game
+      if (d === 0) {
         gamePlayers.push({ userId, userName, deck })
       }
 
@@ -376,6 +447,16 @@ const main = async () => {
 
   await pipeline.exec()
   console.log('\nDone! Seeded 5 users with 25 decks total.')
+
+  const base = process.env.BASE_URL ?? 'http://localhost:3000'
+  console.log('\nRoutes:')
+  for (let u = 1; u <= 5; u++) {
+    console.log(`  ${base}/user/test-user-${u}  (Test User ${u} profile & decks)`)
+  }
+  console.log(`  ${base}/game/test-game  (game overview)`)
+  for (let u = 1; u <= 5; u++) {
+    console.log(`  ${base}/game/test-game/test-user-${u}  (Test User ${u} game view)`)
+  }
 
   await seedTestGame(redis, gamePlayers)
   await redis.quit()
