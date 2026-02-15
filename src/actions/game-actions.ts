@@ -33,11 +33,12 @@ const createEmptyPlayer = (playerId: string, name: string): PlayerState => ({
 // ---------------------------------------------------------------------------
 
 const getGame = async (gameId: string): Promise<ActionResult<GameSummary>> => {
-  const raw = await redis.get(`game:${gameId}`)
+  const [raw, logEntries] = await Promise.all([redis.get(`game:${gameId}`), redis.lrange(`game:${gameId}:log`, 0, 49)])
   if (!raw) {
     return { success: false, error: 'Game not found' }
   }
-  return { success: true, data: toGameSummary(JSON.parse(raw) as GameState) }
+  const actionLog = logEntries.map((entry) => JSON.parse(entry) as ActionLogEntry)
+  return { success: true, data: toGameSummary(JSON.parse(raw) as GameState, actionLog) }
 }
 
 const MAX_NAME_LENGTH = 200
@@ -78,7 +79,7 @@ const createGame = async (
     .sadd(`game:${gameId}:players`, creatorUserId)
     .exec()
 
-  return { success: true, data: toGameSummary(game) }
+  return { success: true, data: toGameSummary(game, []) }
 }
 
 const joinGame = async (gameId: string, userId: string, playerName: string): Promise<ActionResult<GameSummary>> => {
@@ -111,7 +112,7 @@ const joinGame = async (gameId: string, userId: string, playerName: string): Pro
     .publish(`game:${gameId}:events`, JSON.stringify({ type: 'gameStateChanged' }))
     .exec()
 
-  return { success: true, data: toGameSummary(game) }
+  return { success: true, data: toGameSummary(game, []) }
 }
 
 const getGameView = async (gameId: string, userId: string): Promise<ActionResult<GameView>> => {

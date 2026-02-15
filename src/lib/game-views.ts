@@ -1,14 +1,7 @@
-import type { GameState, GameSummary, GameView, OpponentView, PlayerState, PlayerSummary } from '$/types/game'
+import type { GameState, GameSummary, GameView, PlayerState, PublicPlayerView } from '$/types/game'
 import type { ActionLogEntry } from '$/types/game-actions'
 
-const toPlayerSummary = (player: PlayerState): PlayerSummary => ({
-  playerId: player.playerId,
-  name: player.name,
-  pool: player.pool,
-  vampiresInPlay: player.minions.filter((m) => !m.inTorpor).length,
-})
-
-const toOpponentView = (player: PlayerState): OpponentView => ({
+const toPublicPlayerView = (player: PlayerState): PublicPlayerView => ({
   playerId: player.playerId,
   name: player.name,
   pool: player.pool,
@@ -24,15 +17,17 @@ const toOpponentView = (player: PlayerState): OpponentView => ({
   victoryPoints: player.victoryPoints,
 })
 
-const toGameSummary = (game: GameState): GameSummary => ({
+const toGameSummary = (game: GameState, actionLog: ActionLogEntry[]): GameSummary => ({
   id: game.id,
   name: game.name,
   status: game.status,
   playerCount: game.playerOrder.length,
-  players: game.playerOrder.map((id) => toPlayerSummary(game.players[id])),
+  players: game.playerOrder.map((id) => toPublicPlayerView(game.players[id])),
   round: game.round,
   turnCount: game.turnCount,
   activePlayer: game.turn.activePlayer,
+  phase: game.turn.phase,
+  actionLog,
 })
 
 const toGameView = (game: GameState, playerId: string, actionLog: ActionLogEntry[]): GameView => ({
@@ -48,7 +43,7 @@ const toGameView = (game: GameState, playerId: string, actionLog: ActionLogEntry
   edge: game.edge,
   contestedCards: game.contestedCards,
   self: game.players[playerId],
-  opponents: game.playerOrder.filter((id) => id !== playerId).map((id) => toOpponentView(game.players[id])),
+  opponents: game.playerOrder.filter((id) => id !== playerId).map((id) => toPublicPlayerView(game.players[id])),
   actionLog,
 })
 

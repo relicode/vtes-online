@@ -18,7 +18,7 @@ const formatTime = (timestamp: string) => {
 }
 
 const ActionLog = ({ entries }: ActionLogProps) => (
-  <Paper variant="outlined" sx={{ maxHeight: 300, overflow: 'auto' }}>
+  <Paper variant="outlined">
     <Typography variant="subtitle2" sx={{ px: 2, pt: 1.5 }}>
       Action Log
     </Typography>

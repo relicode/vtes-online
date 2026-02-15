@@ -42,9 +42,15 @@ export const GET = (request: NextRequest, { params }: { params: Promise<{ gameId
             const actionLog = logEntries.map((entry) => JSON.parse(entry) as ActionLogEntry)
             enqueue(`event: gameStateChanged\ndata: ${JSON.stringify(toGameView(game, userId, actionLog))}\n\n`)
           } else {
-            const raw = await redis.get(`game:${gameId}`)
+            const [raw, logEntries] = await Promise.all([
+              redis.get(`game:${gameId}`),
+              redis.lrange(`game:${gameId}:log`, 0, 49),
+            ])
             if (!raw) return
-            enqueue(`event: gameStateChanged\ndata: ${JSON.stringify(toGameSummary(JSON.parse(raw) as GameState))}\n\n`)
+            const actionLog = logEntries.map((entry) => JSON.parse(entry) as ActionLogEntry)
+            enqueue(
+              `event: gameStateChanged\ndata: ${JSON.stringify(toGameSummary(JSON.parse(raw) as GameState, actionLog))}\n\n`
+            )
           }
         } catch {
           // Fetch failed; client will get the next update

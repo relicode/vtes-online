@@ -1,4 +1,10 @@
 // ---------------------------------------------------------------------------
+// View types (sent to clients)
+// ---------------------------------------------------------------------------
+
+import type { ActionLogEntry } from './game-actions'
+
+// ---------------------------------------------------------------------------
 // Card-in-play instances
 // ---------------------------------------------------------------------------
 
@@ -144,14 +150,9 @@ type GameState = {
   players: Record<string, PlayerState>
 }
 
-// ---------------------------------------------------------------------------
-// View types (sent to clients)
-// ---------------------------------------------------------------------------
+export type { ActionLogEntry }
 
-// Re-export ActionLogEntry so consumers can import from game.ts
-export type { ActionLogEntry } from './game-actions'
-
-type OpponentView = {
+type PublicPlayerView = {
   playerId: string
   name: string
   pool: number
@@ -187,15 +188,8 @@ type GameView = {
   contestedCards: ContestedCard[]
 
   self: PlayerState
-  opponents: OpponentView[]
-  actionLog: import('./game-actions').ActionLogEntry[]
-}
-
-type PlayerSummary = {
-  playerId: string
-  name: string
-  pool: number
-  vampiresInPlay: number
+  opponents: PublicPlayerView[]
+  actionLog: ActionLogEntry[]
 }
 
 type GameSummary = {
@@ -203,10 +197,12 @@ type GameSummary = {
   name: string
   status: GameStatus
   playerCount: number
-  players: PlayerSummary[]
+  players: PublicPlayerView[]
   round: number
   turnCount: number
   activePlayer: string
+  phase: TurnPhase
+  actionLog: ActionLogEntry[]
 }
 
 // ---------------------------------------------------------------------------
@@ -227,9 +223,8 @@ export type {
   GameView,
   LibraryCardInPlay,
   MinionInPlay,
-  OpponentView,
+  PublicPlayerView,
   PlayerState,
-  PlayerSummary,
   TurnPhase,
   TurnState,
   UncontrolledMinion,

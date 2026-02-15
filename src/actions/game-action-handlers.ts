@@ -1,3 +1,4 @@
+import { getCardById } from '$/data/cards'
 import type { GameState, MinionInPlay, TurnPhase } from '$/types/game'
 import type { CardZone, GameAction } from '$/types/game-actions'
 
@@ -54,7 +55,9 @@ const handleDrawFromCrypt = (state: GameState, playerId: string, count: number):
   if (player.crypt.length === 0) return { success: false, error: 'Crypt is empty' }
   const actual = Math.min(count, player.crypt.length)
   const drawn = player.crypt.splice(0, actual)
-  player.hand.push(...drawn)
+  for (const cardId of drawn) {
+    player.uncontrolled.push({ instanceId: crypto.randomUUID(), cardId, blood: 0 })
+  }
   return { success: true, state, description: `drew ${actual} card${actual !== 1 ? 's' : ''} from crypt` }
 }
 
@@ -63,7 +66,8 @@ const handleToggleMinionLock = (state: GameState, playerId: string, minionInstan
   const minion = player.minions.find((m) => m.instanceId === minionInstanceId)
   if (!minion) return { success: false, error: 'Minion not found' }
   minion.locked = !minion.locked
-  return { success: true, state, description: `${minion.locked ? 'locked' : 'unlocked'} a minion` }
+  const name = getCardById(minion.cardId)?.name ?? 'a minion'
+  return { success: true, state, description: `${minion.locked ? 'locked' : 'unlocked'} ${name}` }
 }
 
 const handleAdjustMinionCounters = (
