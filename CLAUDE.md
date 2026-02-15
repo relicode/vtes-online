@@ -4,23 +4,53 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-- `npm run dev` — start dev server
+- `npm run dev` — start dev server (requires Redis running, see below)
 - `npm run build` — production build
 - `npm run lint` — ESLint
 - `npm run lint:prettier` — Prettier check
 - `npm run lint:typescript` — TypeScript type check (`tsc --noEmit`)
 - `npm run format` — auto-fix ESLint + Prettier
+- `npm run seed` — seed Redis with test game data
+- `npm run seed:flush` — flush Redis and re-seed
 
 No test framework is configured yet.
+
+## Infrastructure
+
+Redis is the sole data store (no SQL database). Start it with `docker compose up -d redis`. The app connects to `REDIS_URL` (default `redis://localhost:6379`). For production, `docker compose --profile app up` runs both Redis and the standalone Next.js container.
 
 ## Architecture
 
 Next.js 16 App Router with React 19 and MUI Material v7. React Compiler is enabled (`reactCompiler: true` in `next.config.ts`). Do not use manual `useMemo`, `useCallback`, or `React.memo` — the compiler handles memoization automatically.
 
-- `src/app/` — App Router pages and layouts (server components by default)
-- `src/components/` — shared components
-- `src/theme.ts` — MUI theme config (CSS variables, light/dark color schemes, Inter font)
-- `src/components/ThemeRegistry.tsx` — client component wrapping `AppRouterCacheProvider` + `ThemeProvider` + `CssBaseline` + `GlobalStyles`
+### Data flow
+
+- `src/actions/` — Server Actions (`'use server'`). All mutations go through here. Each action returns `ActionResult<T>` (discriminated union: `{ success: true, data: T } | { success: false, error: string }`).
+- `src/lib/redis.ts` — singleton ioredis client (cached on `globalThis` in dev)
+- `src/lib/game-views.ts` — pure projection functions that transform authoritative `GameState` into `GameView` (player-specific, hides opponents' hidden cards) and `GameSummary` (public lobby info)
+
+### Real-time updates
+
+SSE endpoint at `/api/game/[gameId]/events` using Redis Pub/Sub. Server subscribes to `game:{gameId}:events` channel; mutations publish to that channel after writing state. Client-side `useGameEventStream` hook (in `src/components/game/GameEventStream.tsx`) connects via `EventSource` and falls back to `router.refresh()` polling on error.
+
+### Game engine
+
+Game actions use a discriminated union (`GameAction` in `src/types/game-actions.ts`). The dispatcher `applyGameAction` in `src/actions/game-action-handlers.ts` pattern-matches on `action.type` and applies mutations to a `structuredClone`'d `GameState`. Action log entries are stored in a capped Redis list (`game:{gameId}:log`, 200 entries).
+
+### Key data types
+
+- `src/types/game.ts` — `GameState` (authoritative server state), `GameView` (per-player view), `PlayerState`, turn state machine (`TurnPhase`, `ActionState`, `CombatState`)
+- `src/types/card.ts` — `CryptCard`, `LibraryCard`, `Card` union; discipline casing convention: lowercase = inferior, UPPERCASE = superior
+- `src/types/user.ts` — `User`, `Deck`, `DeckCardEntry`
+- `src/data/cards.ts` — parses `crypt.json` / `library.json` into typed card arrays; card images served from `/cards/`
+
+### Routes
+
+- `/` — home
+- `/user/[userId]` — user profile and deck list
+- `/user/[userId]/deck/[deckId]` — deck editor
+- `/game/[gameId]` — public game view (spectator/lobby)
+- `/game/[gameId]/[userId]` — player game view
 
 ## Conventions
 
