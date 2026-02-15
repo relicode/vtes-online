@@ -136,25 +136,6 @@ const GameLayoutShellInner = ({ public: publicSlot, player, log }: GameLayoutShe
           </>
         ) : null}
         <Box sx={{ flex: '1 1 0', minWidth: 0, overflow: isWide ? 'auto' : undefined }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              px: 1.5,
-              py: 0.25,
-              minHeight: 30,
-              position: 'sticky',
-              top: 0,
-              zIndex: 2,
-              bgcolor: 'primary.light',
-              borderBottom: 1,
-              borderColor: 'divider',
-            }}
-          >
-            <Typography variant="caption" sx={{ fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              Player
-            </Typography>
-          </Box>
           {player}
         </Box>
         {!isWide && (

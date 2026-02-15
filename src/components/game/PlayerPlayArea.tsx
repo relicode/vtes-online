@@ -1,9 +1,6 @@
 'use client'
 
-import DeleteIcon from '@mui/icons-material/Delete'
 import Box from '@mui/material/Box'
-import Divider from '@mui/material/Divider'
-import IconButton from '@mui/material/IconButton'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { useConfirm } from 'material-ui-confirm'
@@ -97,7 +94,7 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
   }
 
   return (
-    <Stack spacing={2}>
+    <>
       <GameActions
         gameId={gameId}
         playerId={playerId}
@@ -106,73 +103,71 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
         cryptSize={gameView.self.crypt.length}
         pool={gameView.self.pool}
         showImages={showImages}
+        selectedInPlayCount={selectedInPlay.size}
         onToggleImages={() => setShowImages((prev) => !prev)}
+        onTrash={handleTrash}
       />
 
-      <CardRow
-        title="Cards in Play"
-        actions={
-          <IconButton size="small" disabled={selectedInPlay.size === 0} onClick={handleTrash} color="error">
-            <DeleteIcon />
-          </IconButton>
-        }
-      >
-        {gameView.self.libraryCardsInPlay.length === 0 && gameView.self.controlledCrypt.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            No cards in play.
-          </Typography>
-        ) : (
-          <>
-            {gameView.self.libraryCardsInPlay.map((c) => (
-              <LibraryCardInPlayComponent
-                key={c.instanceId}
-                libraryCard={c}
-                selected={selectedInPlay.has(c.instanceId)}
-                showImages={showImages}
-                onSelect={toggleInPlay}
-                onToggleLock={handleToggleLock}
-                onAdjustLife={handleAdjustLibraryCardLife}
-              />
-            ))}
-            {gameView.self.libraryCardsInPlay.length > 0 && gameView.self.controlledCrypt.length > 0 && (
-              <Box sx={{ width: '100%' }} />
-            )}
-            {gameView.self.controlledCrypt.map((m) => (
-              <CryptCard
-                key={m.instanceId}
-                controlled
-                cryptCard={m}
-                selected={selectedInPlay.has(m.instanceId)}
-                showImages={showImages}
-                onSelect={toggleInPlay}
-                onToggleLock={handleToggleLock}
-                onAdjustBlood={handleAdjustMinionBlood}
-              />
-            ))}
-          </>
-        )}
-      </CardRow>
-
-      {gameView.self.uncontrolledCrypt.length > 0 && (
-        <CardRow title="Uncontrolled">
-          {gameView.self.uncontrolledCrypt.map((u) => (
-            <CryptCard
-              key={u.instanceId}
-              controlled={false}
-              cryptCard={u}
-              selected={selectedInPlay.has(u.instanceId)}
-              showImages={showImages}
-              onSelect={toggleInPlay}
-              onAdjustBlood={handleAdjustUncontrolledBlood}
-            />
-          ))}
+      <Stack spacing={4} sx={{ p: 2 }}>
+        <CardRow title="Cards in Play">
+          {gameView.self.libraryCardsInPlay.length === 0 && gameView.self.controlledCrypt.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No cards in play.
+            </Typography>
+          ) : (
+            <>
+              {gameView.self.libraryCardsInPlay.map((c) => (
+                <LibraryCardInPlayComponent
+                  key={c.instanceId}
+                  libraryCard={c}
+                  selected={selectedInPlay.has(c.instanceId)}
+                  showImages={showImages}
+                  onSelect={toggleInPlay}
+                  onToggleLock={handleToggleLock}
+                  onAdjustLife={handleAdjustLibraryCardLife}
+                />
+              ))}
+              {gameView.self.libraryCardsInPlay.length > 0 && gameView.self.controlledCrypt.length > 0 && (
+                <Box sx={{ width: '100%' }} />
+              )}
+              {gameView.self.controlledCrypt.map((m) => (
+                <CryptCard
+                  key={m.instanceId}
+                  controlled
+                  cryptCard={m}
+                  selected={selectedInPlay.has(m.instanceId)}
+                  showImages={showImages}
+                  onSelect={toggleInPlay}
+                  onToggleLock={handleToggleLock}
+                  onAdjustBlood={handleAdjustMinionBlood}
+                />
+              ))}
+            </>
+          )}
         </CardRow>
-      )}
 
-      <Divider />
+        {gameView.self.uncontrolledCrypt.length > 0 && (
+          <CardRow
+            title="Uncontrolled"
+            sx={{ border: '1px dashed', borderColor: 'warning.main', borderRadius: 1, p: 4, paddingTop: 2 }}
+          >
+            {gameView.self.uncontrolledCrypt.map((u) => (
+              <CryptCard
+                key={u.instanceId}
+                controlled={false}
+                cryptCard={u}
+                selected={selectedInPlay.has(u.instanceId)}
+                showImages={showImages}
+                onSelect={toggleInPlay}
+                onAdjustBlood={handleAdjustUncontrolledBlood}
+              />
+            ))}
+          </CardRow>
+        )}
 
-      <PlayerHand hand={gameView.self.hand} showImages={showImages} onPlay={handlePlayFromHand} />
-    </Stack>
+        <PlayerHand hand={gameView.self.hand} showImages={showImages} onPlay={handlePlayFromHand} />
+      </Stack>
+    </>
   )
 }
 

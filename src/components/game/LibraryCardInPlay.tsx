@@ -40,10 +40,10 @@ const LibraryCardInPlayComponent = ({
   const [expanded, setExpanded] = useState(false)
   const card = getCardById(libraryCard.cardId)
   const name = card?.name ?? 'Unknown'
-  const isAlly = card?.type === 'library' && card.types.includes('Ally')
+  const isAllyOrRetainer = card?.type === 'library' && card.types.some((t) => t === 'Ally' || t === 'Retainer')
   const badgeBorderColor = selected ? 'primary.main' : 'success.main'
 
-  const lifeBadge = isAlly ? (
+  const lifeBadge = isAllyOrRetainer ? (
     <Stack direction="row" spacing={0} alignItems="center" sx={{ bgcolor: 'error.main', borderRadius: 3, px: 0.25 }}>
       <IconButton
         size="small"

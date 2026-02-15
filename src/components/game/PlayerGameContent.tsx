@@ -1,7 +1,5 @@
 'use client'
 
-import Box from '@mui/material/Box'
-
 import type { GameView } from '$/types/game'
 import PlayerPlayArea from './PlayerPlayArea'
 import useGameEventStream from './GameEventStream'
@@ -16,9 +14,7 @@ const PlayerGameContent = ({ gameId, playerId, initialState }: PlayerGameContent
   const gameView = useGameEventStream({ gameId, userId: playerId, initialState })
 
   return (
-    <Box sx={{ p: 2 }}>
-      <PlayerPlayArea gameView={gameView} gameId={gameId} playerId={playerId} />
-    </Box>
+    <PlayerPlayArea gameView={gameView} gameId={gameId} playerId={playerId} />
   )
 }
 
