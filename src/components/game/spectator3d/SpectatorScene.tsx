@@ -6,10 +6,9 @@ import { useEffect, useRef } from 'react'
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace, Vector3, type Vector3Tuple } from 'three'
 
 import type { GameSummary } from '$/types/game'
-
 import PlayerSeat from './PlayerSeat'
-import TableMesh from './TableMesh'
 import { computeSeatLayouts } from './table-geometry'
+import TableMesh from './TableMesh'
 
 type SpectatorSceneProps = {
   game: GameSummary

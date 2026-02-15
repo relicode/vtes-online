@@ -1,21 +1,20 @@
 'use client'
 
-import ViewInArIcon from '@mui/icons-material/ViewInAr'
 import Avatar from '@mui/material/Avatar'
 import Badge from '@mui/material/Badge'
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
-import IconButton from '@mui/material/IconButton'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import dynamic from 'next/dynamic'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 
 import { getCardById } from '$/data/cards'
 import type { GameSummary } from '$/types/game'
 import useGameEventStream from './GameEventStream'
+import { useView3d } from './View3dContext'
 
 const SpectatorScene = dynamic(() => import('./spectator3d/SpectatorScene'), {
   ssr: false,
@@ -33,7 +32,7 @@ type PublicGameContentProps = {
 
 const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => {
   const game = useGameEventStream({ gameId, initialState })
-  const [view3d, setView3d] = useState(false)
+  const { view3d } = useView3d()
 
   useEffect(() => {
     document.title = game.name
@@ -41,15 +40,8 @@ const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => 
 
   if (view3d) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <Box sx={{ p: 0.5, display: 'flex', justifyContent: 'flex-end' }}>
-          <IconButton size="small" onClick={() => setView3d(false)} color="info">
-            <ViewInArIcon />
-          </IconButton>
-        </Box>
-        <Box sx={{ flex: 1, minHeight: 0 }}>
-          <SpectatorScene game={game} />
-        </Box>
+      <Box sx={{ height: '100%' }}>
+        <SpectatorScene game={game} />
       </Box>
     )
   }
@@ -60,9 +52,6 @@ const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => 
         <Chip label={game.status} color={game.status === 'active' ? 'success' : 'default'} />
         <Chip label={`Round ${game.round} / Turn ${game.turnCount}`} variant="outlined" />
         <Chip label={`${game.playerCount} players`} variant="outlined" />
-        <IconButton size="small" onClick={() => setView3d(true)} sx={{ ml: 'auto' }}>
-          <ViewInArIcon />
-        </IconButton>
       </Stack>
 
       <Stack spacing={1}>
@@ -98,16 +87,20 @@ const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => 
                             src={c.card?.url}
                             alt="Library card in play"
                             sx={{
-                              width: 60, aspectRatio: '48/67', borderRadius: 0.5, display: 'block',
-                              transform: c.locked ? 'rotate(25deg)' : 'none', transition: 'transform 0.2s',
+                              width: 60,
+                              aspectRatio: '48/67',
+                              borderRadius: 0.5,
+                              display: 'block',
+                              transform: c.locked ? 'rotate(25deg)' : 'none',
+                              transition: 'transform 0.2s',
                             }}
                           />
                         ))}
                       </Stack>
                     )}
-                    {(player.minions.length > 0 || allyCards.length > 0) && (
+                    {(player.controlledCrypt.length > 0 || allyCards.length > 0) && (
                       <Stack direction="row" spacing={0.5} useFlexGap sx={{ flexWrap: 'wrap' }}>
-                        {player.minions.map((m) => {
+                        {player.controlledCrypt.map((m) => {
                           const minionCard = getCardById(m.cardId)
                           return (
                             <Badge
@@ -118,7 +111,8 @@ const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => 
                               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                               sx={{
                                 width: 60,
-                                transform: m.locked ? 'rotate(25deg)' : 'none', transition: 'transform 0.2s',
+                                transform: m.locked ? 'rotate(25deg)' : 'none',
+                                transition: 'transform 0.2s',
                               }}
                               slotProps={{
                                 badge: {
@@ -144,7 +138,8 @@ const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => 
                             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                             sx={{
                               width: 60,
-                              transform: c.locked ? 'rotate(25deg)' : 'none', transition: 'transform 0.2s',
+                              transform: c.locked ? 'rotate(25deg)' : 'none',
+                              transition: 'transform 0.2s',
                             }}
                             slotProps={{
                               badge: {
@@ -163,9 +158,9 @@ const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => 
                       </Stack>
                     )}
                   </Stack>
-                  {player.uncontrolled.length > 0 && (
+                  {player.uncontrolledCrypt.length > 0 && (
                     <Stack spacing={0.5}>
-                      {player.uncontrolled.map((u) => (
+                      {player.uncontrolledCrypt.map((u) => (
                         <Badge
                           key={u.instanceId}
                           badgeContent={u.blood}

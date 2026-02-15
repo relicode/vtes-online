@@ -1,12 +1,10 @@
 'use client'
 
 import { Html } from '@react-three/drei'
+import type { Vector3Tuple } from 'three'
 
 import { getCardById } from '$/data/cards'
 import type { PublicPlayerView } from '$/types/game'
-
-import type { Vector3Tuple } from 'three'
-
 import CardMesh, { CARD_WIDTH } from './CardMesh'
 
 type PlayerSeatProps = {
@@ -27,7 +25,7 @@ const centerOffset = (count: number) => ((count - 1) * CARD_GAP) / -2
 
 const PlayerSeat = ({ player, position, rotation, isActive, onCardClick }: PlayerSeatProps) => {
   const allMinions = [
-    ...player.minions.map((m) => ({
+    ...player.controlledCrypt.map((m) => ({
       instanceId: m.instanceId,
       imageUrl: getCardById(m.cardId)?.url ?? '/cards/cardbackcrypt.jpg',
       locked: m.locked,
@@ -99,12 +97,12 @@ const PlayerSeat = ({ player, position, rotation, isActive, onCardClick }: Playe
         />
       ))}
 
-      {/* Side: uncontrolled minions (card back) */}
-      {player.uncontrolled.map((u, i) => (
+      {/* Side: uncontrolled crypt cards (card back) */}
+      {player.uncontrolledCrypt.map((u, i) => (
         <CardMesh
           key={u.instanceId}
           imageUrl="/cards/cardbackcrypt.jpg"
-          position={[centerOffset(player.uncontrolled.length) + i * CARD_GAP, CARD_Y, UNCONTROLLED_OFFSET]}
+          position={[centerOffset(player.uncontrolledCrypt.length) + i * CARD_GAP, CARD_Y, UNCONTROLLED_OFFSET]}
           counters={u.blood > 0 ? u.blood : undefined}
           onCardClick={onCardClick}
         />

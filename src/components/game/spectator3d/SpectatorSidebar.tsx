@@ -51,9 +51,7 @@ const SpectatorSidebar = ({ game, focusedPlayerId, onFocusPlayer }: SpectatorSid
               }}
             >
               <span>{player.name}</span>
-              <Avatar sx={{ bgcolor: 'error.main', width: 22, height: 22, fontSize: 11, ml: 1 }}>
-                {player.pool}
-              </Avatar>
+              <Avatar sx={{ bgcolor: 'error.main', width: 22, height: 22, fontSize: 11, ml: 1 }}>{player.pool}</Avatar>
             </Button>
           )
         })}

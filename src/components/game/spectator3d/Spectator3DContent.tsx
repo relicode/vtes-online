@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react'
 
 import useGameEventStream from '$/components/game/GameEventStream'
 import type { GameSummary } from '$/types/game'
-
 import SpectatorSidebar from './SpectatorSidebar'
 
 const SpectatorScene = dynamic(() => import('./SpectatorScene'), { ssr: false })

@@ -16,8 +16,8 @@ import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
-import { useState } from 'react'
 import { useConfirm } from 'material-ui-confirm'
+import { useState } from 'react'
 
 import { performGameAction } from '$/actions/game-actions'
 import CardTypeIcon from '$/components/CardTypeIcon'
@@ -25,8 +25,8 @@ import ClanIcon from '$/components/ClanIcon'
 import { getCardById } from '$/data/cards'
 import type { GameView } from '$/types/game'
 import CardRow from './CardRow'
+import CryptCardInPlay from './CryptCardInPlay'
 import GameActions from './GameActions'
-import MinionCard from './MinionCard'
 import PlayerHand from './PlayerHand'
 
 type GameBoardProps = {
@@ -68,7 +68,7 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
   const getSelectedCardNames = () => {
     const names: string[] = []
     for (const id of selectedInPlay) {
-      const minion = gameView.self.minions.find((m) => m.instanceId === id)
+      const minion = gameView.self.controlledCrypt.find((m) => m.instanceId === id)
       if (minion) {
         names.push(getCardById(minion.cardId)?.name ?? 'Unknown')
         continue
@@ -78,7 +78,7 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
         names.push(getCardById(lib.cardId)?.name ?? 'Unknown')
         continue
       }
-      const unc = gameView.self.uncontrolled.find((u) => u.instanceId === id)
+      const unc = gameView.self.uncontrolledCrypt.find((u) => u.instanceId === id)
       if (unc) {
         names.push(getCardById(unc.cardId)?.name ?? 'Unknown')
       }
@@ -137,7 +137,7 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
           </IconButton>
         }
       >
-        {gameView.self.libraryCardsInPlay.length === 0 && gameView.self.minions.length === 0 ? (
+        {gameView.self.libraryCardsInPlay.length === 0 && gameView.self.controlledCrypt.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
             No cards in play.
           </Typography>
@@ -153,18 +153,23 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
                       <IconButton
                         size="small"
                         onClick={() => handleToggleLock(c.instanceId)}
-                        sx={{ p: 0.25, bgcolor: 'background.paper', '&:hover': { bgcolor: 'background.paper' }, borderRadius: '50%' }}
+                        sx={{
+                          p: 0.25,
+                          bgcolor: c.locked ? 'warning.dark' : 'success.dark',
+                          '&:hover': { bgcolor: c.locked ? 'warning.main' : 'success.main' },
+                          borderRadius: '50%',
+                        }}
                       >
                         {c.locked ? (
-                          <LockIcon sx={{ fontSize: 20, color: 'warning.main' }} />
+                          <LockIcon sx={{ fontSize: 20, color: 'warning.contrastText' }} />
                         ) : (
-                          <LockOpenIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                          <LockOpenIcon sx={{ fontSize: 20, color: 'success.contrastText' }} />
                         )}
                       </IconButton>
                     }
                     anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
                     slotProps={{
-                      badge: { style: { backgroundColor: 'transparent', boxShadow: 'none', padding: 0, minWidth: 0 } },
+                      badge: { style: { boxShadow: 'none', padding: 0, minWidth: 0 } },
                     }}
                   >
                     <Tooltip
@@ -196,16 +201,33 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
                             card?.cardText ? (
                               <IconButton
                                 size="small"
-                                onClick={(e) => { e.stopPropagation(); toggleExpanded(c.instanceId) }}
-                                sx={{ p: 0.25, bgcolor: 'background.paper', '&:hover': { bgcolor: 'background.paper' }, borderRadius: '50%' }}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleExpanded(c.instanceId)
+                                }}
+                                sx={{
+                                  p: 0.25,
+                                  bgcolor: 'background.paper',
+                                  '&:hover': { bgcolor: 'background.paper' },
+                                  borderRadius: '50%',
+                                }}
                               >
-                                <ExpandMoreIcon sx={{ fontSize: 20, color: 'text.secondary', transform: expandedCards.has(c.instanceId) ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                                <ExpandMoreIcon
+                                  sx={{
+                                    fontSize: 20,
+                                    color: 'text.secondary',
+                                    transform: expandedCards.has(c.instanceId) ? 'rotate(180deg)' : 'none',
+                                    transition: 'transform 0.2s',
+                                  }}
+                                />
                               </IconButton>
                             ) : undefined
                           }
                           anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
                           slotProps={{
-                            badge: { style: { backgroundColor: 'transparent', boxShadow: 'none', padding: 0, minWidth: 0 } },
+                            badge: {
+                              style: { boxShadow: 'none', padding: 0, minWidth: 0 },
+                            },
                           }}
                         >
                           <Paper
@@ -243,7 +265,11 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
                             )}
                             {card?.cardText && (
                               <Collapse in={expandedCards.has(c.instanceId)}>
-                                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', whiteSpace: 'pre-line' }}>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  sx={{ mt: 0.5, display: 'block', whiteSpace: 'pre-line' }}
+                                >
                                   {card.cardText}
                                 </Typography>
                               </Collapse>
@@ -256,13 +282,13 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
                 </Box>
               )
             })}
-            {gameView.self.libraryCardsInPlay.length > 0 && gameView.self.minions.length > 0 && (
+            {gameView.self.libraryCardsInPlay.length > 0 && gameView.self.controlledCrypt.length > 0 && (
               <Box sx={{ width: '100%' }} />
             )}
-            {gameView.self.minions.map((m) => (
-              <MinionCard
+            {gameView.self.controlledCrypt.map((m) => (
+              <CryptCardInPlay
                 key={m.instanceId}
-                minion={m}
+                cryptCard={m}
                 selected={selectedInPlay.has(m.instanceId)}
                 showImages={showImages}
                 onSelect={toggleInPlay}
@@ -274,112 +300,162 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
         )}
       </CardRow>
 
-      {gameView.self.uncontrolled.length > 0 && (
+      {gameView.self.uncontrolledCrypt.length > 0 && (
         <CardRow title="Uncontrolled">
-            {gameView.self.uncontrolled.map((u) => {
-              const card = getCardById(u.cardId)
-              const capacity = card?.type === 'crypt' ? card.capacity : 0
-              const isSelected = selectedInPlay.has(u.instanceId)
-              return (
-                <Badge
-                  key={u.instanceId}
-                  badgeContent={
-                    <Stack direction="row" spacing={0} alignItems="center" sx={{ bgcolor: 'error.main', borderRadius: 3, px: 0.25 }}>
-                      <IconButton size="small" disabled={u.blood <= 0} onClick={() => handleAdjustUncontrolledBlood(u.instanceId, -1)} sx={{ p: 0, color: 'error.contrastText', '&.Mui-disabled': { color: 'error.dark' } }}>
-                        <RemoveIcon sx={{ fontSize: 14 }} />
-                      </IconButton>
-                      <Typography variant="caption" sx={{ color: 'error.contrastText', fontWeight: 'bold', mx: 0.25 }}>{`${u.blood}/${capacity}`}</Typography>
-                      <IconButton size="small" disabled={u.blood >= capacity} onClick={() => handleAdjustUncontrolledBlood(u.instanceId, 1)} sx={{ p: 0, color: 'error.contrastText', '&.Mui-disabled': { color: 'error.dark' } }}>
-                        <AddIcon sx={{ fontSize: 14 }} />
-                      </IconButton>
-                    </Stack>
-                  }
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                  slotProps={{
-                    badge: { style: { backgroundColor: 'transparent', boxShadow: 'none', padding: 0, minWidth: 0, left: '50%', transform: 'translate(-50%, 50%)' } },
-                  }}
-                >
-                  <Tooltip
-                    enterDelay={2000}
-                    enterNextDelay={2000}
-                    placement="left"
-                    title={card ? <Box component="img" src={card.url} alt={card.name} sx={{ width: 250 }} /> : ''}
-                    slotProps={{ tooltip: { sx: { bgcolor: 'transparent', p: 0 } } }}
+          {gameView.self.uncontrolledCrypt.map((u) => {
+            const card = getCardById(u.cardId)
+            const capacity = card?.type === 'crypt' ? card.capacity : 0
+            const isSelected = selectedInPlay.has(u.instanceId)
+            return (
+              <Badge
+                key={u.instanceId}
+                badgeContent={
+                  <Stack
+                    direction="row"
+                    spacing={0}
+                    alignItems="center"
+                    sx={{ bgcolor: 'error.main', borderRadius: 3, px: 0.25 }}
                   >
-                    {showImages ? (
-                      <Box
-                        component="img"
-                        src={card?.url}
-                        alt={card?.name ?? 'Unknown'}
+                    <IconButton
+                      size="small"
+                      disabled={u.blood <= 0}
+                      onClick={() => handleAdjustUncontrolledBlood(u.instanceId, -1)}
+                      sx={{ p: 0, color: 'error.contrastText', '&.Mui-disabled': { color: 'error.dark' } }}
+                    >
+                      <RemoveIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: 'error.contrastText', fontWeight: 'bold', mx: 0.25 }}
+                    >{`${u.blood}/${capacity}`}</Typography>
+                    <IconButton
+                      size="small"
+                      disabled={u.blood >= capacity}
+                      onClick={() => handleAdjustUncontrolledBlood(u.instanceId, 1)}
+                      sx={{ p: 0, color: 'error.contrastText', '&.Mui-disabled': { color: 'error.dark' } }}
+                    >
+                      <AddIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </Stack>
+                }
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                slotProps={{
+                  badge: {
+                    style: {
+                      backgroundColor: 'transparent',
+                      boxShadow: 'none',
+                      padding: 0,
+                      minWidth: 0,
+                      left: '50%',
+                      transform: 'translate(-50%, 50%)',
+                    },
+                  },
+                }}
+              >
+                <Tooltip
+                  enterDelay={2000}
+                  enterNextDelay={2000}
+                  placement="left"
+                  title={card ? <Box component="img" src={card.url} alt={card.name} sx={{ width: 250 }} /> : ''}
+                  slotProps={{ tooltip: { sx: { bgcolor: 'transparent', p: 0 } } }}
+                >
+                  {showImages ? (
+                    <Box
+                      component="img"
+                      src={card?.url}
+                      alt={card?.name ?? 'Unknown'}
+                      onClick={() => toggleInPlay(u.instanceId)}
+                      sx={{
+                        width: 120,
+                        aspectRatio: '48/67',
+                        borderRadius: 0.5,
+                        display: 'block',
+                        cursor: 'pointer',
+                        outline: isSelected ? '3px solid' : 'none',
+                        outlineColor: 'primary.main',
+                      }}
+                    />
+                  ) : (
+                    <Badge
+                      badgeContent={
+                        card?.cardText ? (
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleExpanded(u.instanceId)
+                            }}
+                            sx={{
+                              p: 0.25,
+                              bgcolor: 'background.paper',
+                              '&:hover': { bgcolor: 'background.paper' },
+                              borderRadius: '50%',
+                            }}
+                          >
+                            <ExpandMoreIcon
+                              sx={{
+                                fontSize: 20,
+                                color: 'text.secondary',
+                                transform: expandedCards.has(u.instanceId) ? 'rotate(180deg)' : 'none',
+                                transition: 'transform 0.2s',
+                              }}
+                            />
+                          </IconButton>
+                        ) : undefined
+                      }
+                      anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+                      slotProps={{
+                        badge: {
+                          style: { boxShadow: 'none', padding: 0, minWidth: 0 },
+                        },
+                      }}
+                    >
+                      <Paper
+                        variant="outlined"
                         onClick={() => toggleInPlay(u.instanceId)}
                         sx={{
-                          width: 120,
-                          aspectRatio: '48/67',
-                          borderRadius: 0.5,
-                          display: 'block',
+                          p: 1.5,
+                          maxWidth: 200,
                           cursor: 'pointer',
-                          outline: isSelected ? '3px solid' : 'none',
-                          outlineColor: 'primary.main',
-                        }}
-                      />
-                    ) : (
-                      <Badge
-                        badgeContent={
-                          card?.cardText ? (
-                            <IconButton
-                              size="small"
-                              onClick={(e) => { e.stopPropagation(); toggleExpanded(u.instanceId) }}
-                              sx={{ p: 0.25, bgcolor: 'background.paper', '&:hover': { bgcolor: 'background.paper' }, borderRadius: '50%' }}
-                            >
-                              <ExpandMoreIcon sx={{ fontSize: 20, color: 'text.secondary', transform: expandedCards.has(u.instanceId) ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-                            </IconButton>
-                          ) : undefined
-                        }
-                        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-                        slotProps={{
-                          badge: { style: { backgroundColor: 'transparent', boxShadow: 'none', padding: 0, minWidth: 0 } },
+                          borderColor: isSelected ? 'primary.main' : 'warning.main',
+                          borderWidth: 2,
+                          bgcolor: isSelected ? 'action.selected' : undefined,
                         }}
                       >
-                        <Paper
-                          variant="outlined"
-                          onClick={() => toggleInPlay(u.instanceId)}
-                          sx={{
-                            p: 1.5,
-                            maxWidth: 200,
-                            cursor: 'pointer',
-                            borderColor: isSelected ? 'primary.main' : 'warning.main',
-                            borderWidth: 2,
-                            bgcolor: isSelected ? 'action.selected' : undefined,
-                          }}
-                        >
-                          <Typography variant="subtitle2">{card?.name ?? 'Unknown'}</Typography>
-                          {card?.type === 'crypt' && (
-                            <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
-                              {card.clans.map((clan) => (
-                                <ClanIcon key={clan} clan={clan} size={32} />
-                              ))}
-                              {card.title && (
-                                <Typography variant="caption" color="text.secondary">{card.title}</Typography>
-                              )}
-                              {card.adv && (
-                                <Chip label="ADV" size="small" color="info" sx={{ height: 18, fontSize: 10 }} />
-                              )}
-                            </Stack>
-                          )}
-                          {card?.cardText && (
-                            <Collapse in={expandedCards.has(u.instanceId)}>
-                              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', whiteSpace: 'pre-line' }}>
-                                {card.cardText}
+                        <Typography variant="subtitle2">{card?.name ?? 'Unknown'}</Typography>
+                        {card?.type === 'crypt' && (
+                          <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
+                            {card.clans.map((clan) => (
+                              <ClanIcon key={clan} clan={clan} size={32} />
+                            ))}
+                            {card.title && (
+                              <Typography variant="caption" color="text.secondary">
+                                {card.title}
                               </Typography>
-                            </Collapse>
-                          )}
-                        </Paper>
-                      </Badge>
-                    )}
-                  </Tooltip>
-                </Badge>
-              )
-            })}
+                            )}
+                            {card.adv && (
+                              <Chip label="ADV" size="small" color="info" sx={{ height: 18, fontSize: 10 }} />
+                            )}
+                          </Stack>
+                        )}
+                        {card?.cardText && (
+                          <Collapse in={expandedCards.has(u.instanceId)}>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ mt: 0.5, display: 'block', whiteSpace: 'pre-line' }}
+                            >
+                              {card.cardText}
+                            </Typography>
+                          </Collapse>
+                        )}
+                      </Paper>
+                    </Badge>
+                  )}
+                </Tooltip>
+              </Badge>
+            )
+          })}
         </CardRow>
       )}
 

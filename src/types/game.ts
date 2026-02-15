@@ -8,21 +8,25 @@ import type { ActionLogEntry } from './game-actions'
 // Card-in-play instances
 // ---------------------------------------------------------------------------
 
-type MinionInPlay = {
+type ControlledCryptCard = {
   instanceId: string
   cardId: string
-  counters: number // blood (vampires/imbued) or life (allies)
+  owner: string
+  controller: string
+  counters: number // blood (vampires) or life (imbued)
   locked: boolean
   inTorpor: boolean
+  attachedTo?: string // instanceId of another card in play
 }
 
-type UncontrolledMinion = {
+type UncontrolledCryptCard = {
   instanceId: string
   cardId: string // hidden from opponents
+  owner: string
   blood: number
 }
 
-type UncontrolledMinionPublic = {
+type UncontrolledCryptCardPublic = {
   instanceId: string
   blood: number
 }
@@ -30,7 +34,9 @@ type UncontrolledMinionPublic = {
 type LibraryCardInPlay = {
   instanceId: string
   cardId: string
-  attachedTo?: string // instanceId of host minion
+  owner: string
+  controller: string
+  attachedTo?: string // instanceId of card this is attached to (e.g. equipped minion)
   counters: number
   locked: boolean
 }
@@ -55,9 +61,9 @@ type PlayerState = {
   removed: string[] // cards removed from game entirely
 
   // In-play areas
-  minions: MinionInPlay[]
+  controlledCrypt: ControlledCryptCard[]
   libraryCardsInPlay: LibraryCardInPlay[]
-  uncontrolled: UncontrolledMinion[]
+  uncontrolledCrypt: UncontrolledCryptCard[]
 
   // Status
   ousted: boolean
@@ -164,9 +170,9 @@ type PublicPlayerView = {
   ashHeap: string[]
   removed: string[]
 
-  minions: MinionInPlay[]
+  controlledCrypt: ControlledCryptCard[]
   libraryCardsInPlay: LibraryCardInPlay[]
-  uncontrolled: UncontrolledMinionPublic[]
+  uncontrolledCrypt: UncontrolledCryptCardPublic[]
 
   ousted: boolean
   victoryPoints: number
@@ -222,12 +228,12 @@ export type {
   GameSummary,
   GameView,
   LibraryCardInPlay,
-  MinionInPlay,
+  ControlledCryptCard,
   PublicPlayerView,
   PlayerState,
   TurnPhase,
   TurnState,
-  UncontrolledMinion,
-  UncontrolledMinionPublic,
+  UncontrolledCryptCard,
+  UncontrolledCryptCardPublic,
   VoteState,
 }

@@ -5,6 +5,7 @@ import Avatar from '@mui/material/Avatar'
 import Button from '@mui/material/Button'
 import IconButton from '@mui/material/IconButton'
 import Stack from '@mui/material/Stack'
+import Tooltip from '@mui/material/Tooltip'
 import { useConfirm } from 'material-ui-confirm'
 
 import { performGameAction } from '$/actions/game-actions'
@@ -36,7 +37,16 @@ const nextPhaseLabel = (current: TurnPhase) => {
   return phaseLabels[phases[idx + 1]] ?? 'End Turn'
 }
 
-const GameActions = ({ gameId, playerId, phase, librarySize, cryptSize, pool, showImages, onToggleImages }: GameActionsProps) => {
+const GameActions = ({
+  gameId,
+  playerId,
+  phase,
+  librarySize,
+  cryptSize,
+  pool,
+  showImages,
+  onToggleImages,
+}: GameActionsProps) => {
   const confirm = useConfirm()
   const act = (action: Parameters<typeof performGameAction>[2]) => performGameAction(gameId, playerId, action)
 
@@ -54,9 +64,16 @@ const GameActions = ({ gameId, playerId, phase, librarySize, cryptSize, pool, sh
 
   return (
     <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center" justifyContent="space-around">
-      <IconButton size="small" onClick={onToggleImages} color={showImages ? 'info' : 'default'} aria-label="Toggle card images">
-        <ImageIcon />
-      </IconButton>
+      <Tooltip title={showImages ? 'Show text cards' : 'Show card images'}>
+        <IconButton
+          size="small"
+          onClick={onToggleImages}
+          color={showImages ? 'info' : 'default'}
+          sx={{ width: 28, height: 28, p: 0 }}
+        >
+          <ImageIcon />
+        </IconButton>
+      </Tooltip>
       <Stack direction="row" alignItems="center" sx={{ gap: 0 }}>
         <IconButton
           size="small"

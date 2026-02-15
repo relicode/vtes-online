@@ -1,5 +1,5 @@
 import { getCardById } from '$/data/cards'
-import type { GameState, MinionInPlay, TurnPhase } from '$/types/game'
+import type { ControlledCryptCard, GameState, TurnPhase } from '$/types/game'
 import type { CardZone, GameAction } from '$/types/game-actions'
 
 // ---------------------------------------------------------------------------
@@ -56,7 +56,7 @@ const handleDrawFromCrypt = (state: GameState, playerId: string, count: number):
   const actual = Math.min(count, player.crypt.length)
   const drawn = player.crypt.splice(0, actual)
   for (const cardId of drawn) {
-    player.uncontrolled.push({ instanceId: crypto.randomUUID(), cardId, blood: 0 })
+    player.uncontrolledCrypt.push({ instanceId: crypto.randomUUID(), cardId, owner: playerId, blood: 0 })
   }
   return { success: true, state, description: `drew ${actual} card${actual !== 1 ? 's' : ''} from crypt` }
 }
@@ -64,7 +64,7 @@ const handleDrawFromCrypt = (state: GameState, playerId: string, count: number):
 const handleToggleLock = (state: GameState, playerId: string, instanceId: string): HandlerResult => {
   const player = state.players[playerId]
   const target =
-    player.minions.find((m) => m.instanceId === instanceId) ??
+    player.controlledCrypt.find((m) => m.instanceId === instanceId) ??
     player.libraryCardsInPlay.find((c) => c.instanceId === instanceId)
   if (!target) return { success: false, error: 'Card not found' }
   target.locked = !target.locked
@@ -79,7 +79,7 @@ const handleAdjustMinionCounters = (
   delta: number
 ): HandlerResult => {
   const player = state.players[playerId]
-  const minion = player.minions.find((m) => m.instanceId === minionInstanceId)
+  const minion = player.controlledCrypt.find((m) => m.instanceId === minionInstanceId)
   if (!minion) return { success: false, error: 'Minion not found' }
   minion.counters = Math.max(0, minion.counters + delta)
   const verb = delta > 0 ? 'added' : 'removed'
@@ -119,15 +119,17 @@ const influenceUncontrolled = (state: GameState): string[] => {
   const player = state.players[state.turn.activePlayer]
   const influenced: string[] = []
 
-  for (let i = player.uncontrolled.length - 1; i >= 0; i--) {
-    const u = player.uncontrolled[i]
+  for (let i = player.uncontrolledCrypt.length - 1; i >= 0; i--) {
+    const u = player.uncontrolledCrypt[i]
     const card = getCardById(u.cardId)
     const capacity = card?.type === 'crypt' ? card.capacity : 0
     if (capacity > 0 && u.blood >= capacity) {
-      player.uncontrolled.splice(i, 1)
-      player.minions.push({
+      player.uncontrolledCrypt.splice(i, 1)
+      player.controlledCrypt.push({
         instanceId: u.instanceId,
         cardId: u.cardId,
+        owner: u.owner,
+        controller: state.turn.activePlayer,
         counters: u.blood,
         locked: false,
         inTorpor: false,
@@ -180,7 +182,7 @@ const handleAdjustUncontrolledBlood = (
   delta: number
 ): HandlerResult => {
   const player = state.players[playerId]
-  const minion = player.uncontrolled.find((m) => m.instanceId === minionInstanceId)
+  const minion = player.uncontrolledCrypt.find((m) => m.instanceId === minionInstanceId)
   if (!minion) return { success: false, error: 'Uncontrolled minion not found' }
   minion.blood = Math.max(0, minion.blood + delta)
   const verb = delta > 0 ? 'added' : 'removed'
@@ -189,17 +191,19 @@ const handleAdjustUncontrolledBlood = (
 
 const handleInfluence = (state: GameState, playerId: string, minionInstanceId: string): HandlerResult => {
   const player = state.players[playerId]
-  const idx = player.uncontrolled.findIndex((m) => m.instanceId === minionInstanceId)
+  const idx = player.uncontrolledCrypt.findIndex((m) => m.instanceId === minionInstanceId)
   if (idx === -1) return { success: false, error: 'Uncontrolled minion not found' }
-  const [uncontrolled] = player.uncontrolled.splice(idx, 1)
-  const controlled: MinionInPlay = {
+  const [uncontrolled] = player.uncontrolledCrypt.splice(idx, 1)
+  const controlled: ControlledCryptCard = {
     instanceId: uncontrolled.instanceId,
     cardId: uncontrolled.cardId,
+    owner: uncontrolled.owner,
+    controller: playerId,
     counters: uncontrolled.blood,
     locked: false,
     inTorpor: false,
   }
-  player.minions.push(controlled)
+  player.controlledCrypt.push(controlled)
   return { success: true, state, description: 'moved a minion from uncontrolled to controlled' }
 }
 
@@ -220,9 +224,11 @@ const handlePlayFromHand = (state: GameState, playerId: string, indices: number[
     names.push(card?.name ?? 'Unknown')
 
     if (card?.type === 'crypt') {
-      player.minions.push({
+      player.controlledCrypt.push({
         instanceId: crypto.randomUUID(),
         cardId,
+        owner: playerId,
+        controller: playerId,
         counters: 0,
         locked: false,
         inTorpor: false,
@@ -231,6 +237,8 @@ const handlePlayFromHand = (state: GameState, playerId: string, indices: number[
       player.libraryCardsInPlay.push({
         instanceId: crypto.randomUUID(),
         cardId,
+        owner: playerId,
+        controller: playerId,
         counters: 0,
         locked: false,
       })
@@ -246,17 +254,17 @@ const handleTrashFromPlay = (state: GameState, playerId: string, instanceIds: st
   // Validate all IDs exist before mutating
   for (const instanceId of instanceIds) {
     const found =
-      player.minions.some((m) => m.instanceId === instanceId) ||
+      player.controlledCrypt.some((m) => m.instanceId === instanceId) ||
       player.libraryCardsInPlay.some((c) => c.instanceId === instanceId) ||
-      player.uncontrolled.some((u) => u.instanceId === instanceId)
+      player.uncontrolledCrypt.some((u) => u.instanceId === instanceId)
     if (!found) return { success: false, error: `Card ${instanceId} not found in play` }
   }
 
   const names: string[] = []
   for (const instanceId of instanceIds) {
-    const minionIdx = player.minions.findIndex((m) => m.instanceId === instanceId)
+    const minionIdx = player.controlledCrypt.findIndex((m) => m.instanceId === instanceId)
     if (minionIdx !== -1) {
-      const [minion] = player.minions.splice(minionIdx, 1)
+      const [minion] = player.controlledCrypt.splice(minionIdx, 1)
       player.ashHeap.push(minion.cardId)
       names.push(getCardById(minion.cardId)?.name ?? 'Unknown')
       continue
@@ -270,9 +278,9 @@ const handleTrashFromPlay = (state: GameState, playerId: string, instanceIds: st
       continue
     }
 
-    const uncontrolledIdx = player.uncontrolled.findIndex((u) => u.instanceId === instanceId)
+    const uncontrolledIdx = player.uncontrolledCrypt.findIndex((u) => u.instanceId === instanceId)
     if (uncontrolledIdx !== -1) {
-      const [minion] = player.uncontrolled.splice(uncontrolledIdx, 1)
+      const [minion] = player.uncontrolledCrypt.splice(uncontrolledIdx, 1)
       player.ashHeap.push(minion.cardId)
       names.push(getCardById(minion.cardId)?.name ?? 'Unknown')
     }
@@ -283,7 +291,7 @@ const handleTrashFromPlay = (state: GameState, playerId: string, instanceIds: st
 
 const handleToggleTorpor = (state: GameState, playerId: string, minionInstanceId: string): HandlerResult => {
   const player = state.players[playerId]
-  const minion = player.minions.find((m) => m.instanceId === minionInstanceId)
+  const minion = player.controlledCrypt.find((m) => m.instanceId === minionInstanceId)
   if (!minion) return { success: false, error: 'Minion not found' }
   minion.inTorpor = !minion.inTorpor
   return {

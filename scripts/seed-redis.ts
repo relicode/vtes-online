@@ -11,7 +11,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import Redis from 'ioredis'
 
-import type { GameState, MinionInPlay, PlayerState, UncontrolledMinion } from '$/types/game'
+import type { ControlledCryptCard, GameState, PlayerState, UncontrolledCryptCard } from '$/types/game'
 import type { ActionLogEntry, GameAction } from '$/types/game-actions'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -99,7 +99,7 @@ const buildPlayerState = (userId: string, userName: string, deck: Deck, cfg: Pla
 
   // Influence vampires into play
   const minionCards = cryptCards.splice(0, cfg.vampiresOut)
-  const minions: MinionInPlay[] = minionCards.map((cardId, i) => {
+  const controlledCrypt: ControlledCryptCard[] = minionCards.map((cardId, i) => {
     const capacity = cryptCapacity(cardId)
     const inTorpor = i < cfg.vampiresInTorpor
     // Vampires in torpor have 0 blood; others have varied blood levels
@@ -107,17 +107,20 @@ const buildPlayerState = (userId: string, userName: string, deck: Deck, cfg: Pla
     return {
       instanceId: randomUUID(),
       cardId,
+      owner: userId,
+      controller: userId,
       counters,
       locked: !inTorpor && i < cfg.lockedVampires,
       inTorpor,
     }
   })
 
-  // Uncontrolled minions (influenced but not yet out)
+  // Uncontrolled crypt cards (influenced but not yet out)
   const uncontrolledCards = cryptCards.splice(0, cfg.uncontrolledCount)
-  const uncontrolled: UncontrolledMinion[] = uncontrolledCards.map((cardId) => ({
+  const uncontrolledCrypt: UncontrolledCryptCard[] = uncontrolledCards.map((cardId) => ({
     instanceId: randomUUID(),
     cardId,
+    owner: userId,
     blood: Math.floor(Math.random() * 3),
   }))
 
@@ -137,9 +140,9 @@ const buildPlayerState = (userId: string, userName: string, deck: Deck, cfg: Pla
     hand,
     ashHeap,
     removed: [],
-    minions,
+    controlledCrypt,
     libraryCardsInPlay: [],
-    uncontrolled,
+    uncontrolledCrypt,
     ousted: false,
     victoryPoints: cfg.victoryPoints,
   }
@@ -269,9 +272,9 @@ const seedTestGame = async (redis: Redis, gamePlayers: { userId: string; userNam
   console.log(`\nCreated test game (round ${game.round}, ${gamePlayers.length} players):`)
   for (const p of gamePlayers) {
     const ps = players[p.userId]
-    const torporCount = ps.minions.filter((m) => m.inTorpor).length
+    const torporCount = ps.controlledCrypt.filter((m) => m.inTorpor).length
     console.log(
-      `  ${p.userName} — pool: ${ps.pool}, minions: ${ps.minions.length}${torporCount ? ` (${torporCount} in torpor)` : ''}, hand: ${ps.hand.length}, ash heap: ${ps.ashHeap.length}, library: ${ps.library.length}`
+      `  ${p.userName} — pool: ${ps.pool}, vampires: ${ps.controlledCrypt.length}${torporCount ? ` (${torporCount} in torpor)` : ''}, hand: ${ps.hand.length}, ash heap: ${ps.ashHeap.length}, library: ${ps.library.length}`
     )
   }
   console.log(`  Seeded ${logEntries.length} action log entries`)

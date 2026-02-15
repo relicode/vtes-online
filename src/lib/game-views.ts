@@ -10,9 +10,9 @@ const toPublicPlayerView = (player: PlayerState): PublicPlayerView => ({
   handSize: player.hand.length,
   ashHeap: player.ashHeap,
   removed: player.removed,
-  minions: player.minions,
+  controlledCrypt: player.controlledCrypt,
   libraryCardsInPlay: player.libraryCardsInPlay,
-  uncontrolled: player.uncontrolled.map((u) => ({ instanceId: u.instanceId, blood: u.blood })),
+  uncontrolledCrypt: player.uncontrolledCrypt.map((u) => ({ instanceId: u.instanceId, blood: u.blood })),
   ousted: player.ousted,
   victoryPoints: player.victoryPoints,
 })

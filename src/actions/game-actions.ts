@@ -21,9 +21,9 @@ const createEmptyPlayer = (playerId: string, name: string): PlayerState => ({
   hand: [],
   ashHeap: [],
   removed: [],
-  minions: [],
+  controlledCrypt: [],
   libraryCardsInPlay: [],
-  uncontrolled: [],
+  uncontrolledCrypt: [],
   ousted: false,
   victoryPoints: 0,
 })

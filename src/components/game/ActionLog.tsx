@@ -19,9 +19,6 @@ const formatTime = (timestamp: string) => {
 
 const ActionLog = ({ entries }: ActionLogProps) => (
   <Paper variant="outlined">
-    <Typography variant="subtitle2" sx={{ px: 2, pt: 1.5 }}>
-      Action Log
-    </Typography>
     <List dense disablePadding>
       {entries.length === 0 ? (
         <ListItem>
