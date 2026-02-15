@@ -1,17 +1,30 @@
 'use client'
 
+import ViewInArIcon from '@mui/icons-material/ViewInAr'
 import Avatar from '@mui/material/Avatar'
 import Badge from '@mui/material/Badge'
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
+import CircularProgress from '@mui/material/CircularProgress'
+import IconButton from '@mui/material/IconButton'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import { useEffect } from 'react'
+import dynamic from 'next/dynamic'
+import { useEffect, useState } from 'react'
 
 import { getCardById } from '$/data/cards'
 import type { GameSummary } from '$/types/game'
 import useGameEventStream from './GameEventStream'
+
+const SpectatorScene = dynamic(() => import('./spectator3d/SpectatorScene'), {
+  ssr: false,
+  loading: () => (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+      <CircularProgress />
+    </Box>
+  ),
+})
 
 type PublicGameContentProps = {
   gameId: string
@@ -20,17 +33,36 @@ type PublicGameContentProps = {
 
 const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => {
   const game = useGameEventStream({ gameId, initialState })
+  const [view3d, setView3d] = useState(false)
 
   useEffect(() => {
     document.title = game.name
   }, [game.name])
 
+  if (view3d) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <Box sx={{ p: 0.5, display: 'flex', justifyContent: 'flex-end' }}>
+          <IconButton size="small" onClick={() => setView3d(false)} color="info">
+            <ViewInArIcon />
+          </IconButton>
+        </Box>
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <SpectatorScene game={game} />
+        </Box>
+      </Box>
+    )
+  }
+
   return (
     <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Stack direction="row" spacing={1}>
+      <Stack direction="row" spacing={1} alignItems="center">
         <Chip label={game.status} color={game.status === 'active' ? 'success' : 'default'} />
         <Chip label={`Round ${game.round} / Turn ${game.turnCount}`} variant="outlined" />
         <Chip label={`${game.playerCount} players`} variant="outlined" />
+        <IconButton size="small" onClick={() => setView3d(true)} sx={{ ml: 'auto' }}>
+          <ViewInArIcon />
+        </IconButton>
       </Stack>
 
       <Stack spacing={1}>
