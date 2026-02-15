@@ -17,14 +17,14 @@ const GameLayoutShell = ({ public: publicSlot, player, log }: GameLayoutShellPro
 
   if (isPlayerView) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-        <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
-          <Box sx={{ flex: '1 1 0', minWidth: 0, overflow: 'auto' }}>{publicSlot}</Box>
-          <Divider orientation="vertical" flexItem />
-          <Box sx={{ flex: '1 1 0', minWidth: 0, overflow: 'auto' }}>{player}</Box>
+      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <Box sx={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>{publicSlot}</Box>
+          <Divider />
+          <Box sx={{ maxHeight: '40%', overflow: 'auto' }}>{log}</Box>
         </Box>
-        <Divider />
-        <Box sx={{ maxHeight: '30vh', overflow: 'auto' }}>{log}</Box>
+        <Divider orientation="vertical" flexItem />
+        <Box sx={{ flex: '1 1 0', minWidth: 0, overflow: 'auto' }}>{player}</Box>
       </Box>
     )
   }

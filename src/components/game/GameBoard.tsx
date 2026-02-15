@@ -2,22 +2,29 @@
 
 import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import LockIcon from '@mui/icons-material/Lock'
 import LockOpenIcon from '@mui/icons-material/LockOpen'
 import RemoveIcon from '@mui/icons-material/Remove'
 import Badge from '@mui/material/Badge'
 import Box from '@mui/material/Box'
+import Chip from '@mui/material/Chip'
+import Collapse from '@mui/material/Collapse'
 import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
+import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { useState } from 'react'
 import { useConfirm } from 'material-ui-confirm'
 
 import { performGameAction } from '$/actions/game-actions'
+import CardTypeIcon from '$/components/CardTypeIcon'
+import ClanIcon from '$/components/ClanIcon'
 import { getCardById } from '$/data/cards'
 import type { GameView } from '$/types/game'
+import CardRow from './CardRow'
 import GameActions from './GameActions'
 import MinionCard from './MinionCard'
 import PlayerHand from './PlayerHand'
@@ -31,6 +38,8 @@ type GameBoardProps = {
 const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
   const confirm = useConfirm()
   const [selectedInPlay, setSelectedInPlay] = useState<Set<string>>(new Set())
+  const [showImages, setShowImages] = useState(false)
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
 
   const toggleInPlay = (instanceId: string) => {
     setSelectedInPlay((prev) => {
@@ -39,6 +48,18 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
         next.delete(instanceId)
       } else {
         next.add(instanceId)
+      }
+      return next
+    })
+  }
+
+  const toggleExpanded = (id: string) => {
+    setExpandedCards((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
       }
       return next
     })
@@ -104,16 +125,18 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
         librarySize={gameView.self.library.length}
         cryptSize={gameView.self.crypt.length}
         pool={gameView.self.pool}
+        showImages={showImages}
+        onToggleImages={() => setShowImages((prev) => !prev)}
       />
 
-      <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
-        <Typography variant="h5" textAlign="center">Cards in Play</Typography>
-        <IconButton size="small" disabled={selectedInPlay.size === 0} onClick={handleTrash} color="error">
-          <DeleteIcon />
-        </IconButton>
-      </Stack>
-
-      <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: 'wrap' }}>
+      <CardRow
+        title="Cards in Play"
+        actions={
+          <IconButton size="small" disabled={selectedInPlay.size === 0} onClick={handleTrash} color="error">
+            <DeleteIcon />
+          </IconButton>
+        }
+      >
         {gameView.self.libraryCardsInPlay.length === 0 && gameView.self.minions.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
             No cards in play.
@@ -124,7 +147,7 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
               const card = getCardById(c.cardId)
               const isSelected = selectedInPlay.has(c.instanceId)
               return (
-                <Box key={c.instanceId} sx={{ transform: c.locked ? 'rotate(25deg)' : 'none', transition: 'transform 0.2s' }}>
+                <Box key={c.instanceId}>
                   <Badge
                     badgeContent={
                       <IconButton
@@ -133,7 +156,7 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
                         sx={{ p: 0.25, bgcolor: 'background.paper', '&:hover': { bgcolor: 'background.paper' }, borderRadius: '50%' }}
                       >
                         {c.locked ? (
-                          <LockIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                          <LockIcon sx={{ fontSize: 20, color: 'warning.main' }} />
                         ) : (
                           <LockOpenIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
                         )}
@@ -144,19 +167,91 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
                       badge: { style: { backgroundColor: 'transparent', boxShadow: 'none', padding: 0, minWidth: 0 } },
                     }}
                   >
-                    <Paper
-                      variant="outlined"
-                      onClick={() => toggleInPlay(c.instanceId)}
-                      sx={{
-                        p: 1.5,
-                        cursor: 'pointer',
-                        borderColor: isSelected ? 'primary.main' : 'success.main',
-                        borderWidth: 2,
-                        bgcolor: isSelected ? 'action.selected' : undefined,
-                      }}
+                    <Tooltip
+                      enterDelay={2000}
+                      enterNextDelay={2000}
+                      placement="left"
+                      title={card ? <Box component="img" src={card.url} alt={card.name} sx={{ width: 250 }} /> : ''}
+                      slotProps={{ tooltip: { sx: { bgcolor: 'transparent', p: 0 } } }}
                     >
-                      <Typography variant="subtitle2">{card?.name ?? 'Unknown'}</Typography>
-                    </Paper>
+                      {showImages ? (
+                        <Box
+                          component="img"
+                          src={card?.url}
+                          alt={card?.name ?? 'Unknown'}
+                          onClick={() => toggleInPlay(c.instanceId)}
+                          sx={{
+                            width: 120,
+                            aspectRatio: '48/67',
+                            borderRadius: 0.5,
+                            display: 'block',
+                            cursor: 'pointer',
+                            outline: isSelected ? '3px solid' : 'none',
+                            outlineColor: 'primary.main',
+                          }}
+                        />
+                      ) : (
+                        <Badge
+                          badgeContent={
+                            card?.cardText ? (
+                              <IconButton
+                                size="small"
+                                onClick={(e) => { e.stopPropagation(); toggleExpanded(c.instanceId) }}
+                                sx={{ p: 0.25, bgcolor: 'background.paper', '&:hover': { bgcolor: 'background.paper' }, borderRadius: '50%' }}
+                              >
+                                <ExpandMoreIcon sx={{ fontSize: 20, color: 'text.secondary', transform: expandedCards.has(c.instanceId) ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                              </IconButton>
+                            ) : undefined
+                          }
+                          anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+                          slotProps={{
+                            badge: { style: { backgroundColor: 'transparent', boxShadow: 'none', padding: 0, minWidth: 0 } },
+                          }}
+                        >
+                          <Paper
+                            variant="outlined"
+                            onClick={() => toggleInPlay(c.instanceId)}
+                            sx={{
+                              p: 1.5,
+                              maxWidth: 200,
+                              cursor: 'pointer',
+                              borderColor: isSelected ? 'primary.main' : 'success.main',
+                              borderWidth: 2,
+                              bgcolor: isSelected ? 'action.selected' : undefined,
+                            }}
+                          >
+                            <Typography variant="subtitle2">{card?.name ?? 'Unknown'}</Typography>
+                            {card?.type === 'library' && (
+                              <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
+                                {card.types.map((t) => (
+                                  <CardTypeIcon key={t} type={t} size={32} />
+                                ))}
+                                {card.clans?.map((clan) => (
+                                  <ClanIcon key={clan} clan={clan} size={32} />
+                                ))}
+                                {card.bloodCost !== undefined && (
+                                  <Typography variant="caption" sx={{ color: 'error.main', fontWeight: 'bold' }}>
+                                    {card.bloodCost} blood
+                                  </Typography>
+                                )}
+                                {card.poolCost !== undefined && (
+                                  <Typography variant="caption" sx={{ color: 'error.main', fontWeight: 'bold' }}>
+                                    {card.poolCost} pool
+                                  </Typography>
+                                )}
+                              </Stack>
+                            )}
+                            {card?.cardText && (
+                              <Collapse in={expandedCards.has(c.instanceId)}>
+                                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', whiteSpace: 'pre-line' }}>
+                                  {card.cardText}
+                                </Typography>
+                              </Collapse>
+                            )}
+                          </Paper>
+                        </Badge>
+                      )}
+                    </Tooltip>
                   </Badge>
                 </Box>
               )
@@ -169,6 +264,7 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
                 key={m.instanceId}
                 minion={m}
                 selected={selectedInPlay.has(m.instanceId)}
+                showImages={showImages}
                 onSelect={toggleInPlay}
                 onToggleLock={handleToggleLock}
                 onAdjustBlood={handleAdjustMinionBlood}
@@ -176,12 +272,10 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
             ))}
           </>
         )}
-      </Stack>
+      </CardRow>
 
       {gameView.self.uncontrolled.length > 0 && (
-        <div>
-          <Typography variant="h6">Uncontrolled</Typography>
-          <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: 'wrap', mt: 1 }}>
+        <CardRow title="Uncontrolled">
             {gameView.self.uncontrolled.map((u) => {
               const card = getCardById(u.cardId)
               const capacity = card?.type === 'crypt' ? card.capacity : 0
@@ -205,29 +299,93 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
                     badge: { style: { backgroundColor: 'transparent', boxShadow: 'none', padding: 0, minWidth: 0, left: '50%', transform: 'translate(-50%, 50%)' } },
                   }}
                 >
-                  <Paper
-                    variant="outlined"
-                    onClick={() => toggleInPlay(u.instanceId)}
-                    sx={{
-                      p: 1.5,
-                      cursor: 'pointer',
-                      borderColor: isSelected ? 'primary.main' : 'warning.main',
-                      borderWidth: 2,
-                      bgcolor: isSelected ? 'action.selected' : undefined,
-                    }}
+                  <Tooltip
+                    enterDelay={2000}
+                    enterNextDelay={2000}
+                    placement="left"
+                    title={card ? <Box component="img" src={card.url} alt={card.name} sx={{ width: 250 }} /> : ''}
+                    slotProps={{ tooltip: { sx: { bgcolor: 'transparent', p: 0 } } }}
                   >
-                    <Typography variant="subtitle2">{card?.name ?? 'Unknown'}</Typography>
-                  </Paper>
+                    {showImages ? (
+                      <Box
+                        component="img"
+                        src={card?.url}
+                        alt={card?.name ?? 'Unknown'}
+                        onClick={() => toggleInPlay(u.instanceId)}
+                        sx={{
+                          width: 120,
+                          aspectRatio: '48/67',
+                          borderRadius: 0.5,
+                          display: 'block',
+                          cursor: 'pointer',
+                          outline: isSelected ? '3px solid' : 'none',
+                          outlineColor: 'primary.main',
+                        }}
+                      />
+                    ) : (
+                      <Badge
+                        badgeContent={
+                          card?.cardText ? (
+                            <IconButton
+                              size="small"
+                              onClick={(e) => { e.stopPropagation(); toggleExpanded(u.instanceId) }}
+                              sx={{ p: 0.25, bgcolor: 'background.paper', '&:hover': { bgcolor: 'background.paper' }, borderRadius: '50%' }}
+                            >
+                              <ExpandMoreIcon sx={{ fontSize: 20, color: 'text.secondary', transform: expandedCards.has(u.instanceId) ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                            </IconButton>
+                          ) : undefined
+                        }
+                        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+                        slotProps={{
+                          badge: { style: { backgroundColor: 'transparent', boxShadow: 'none', padding: 0, minWidth: 0 } },
+                        }}
+                      >
+                        <Paper
+                          variant="outlined"
+                          onClick={() => toggleInPlay(u.instanceId)}
+                          sx={{
+                            p: 1.5,
+                            maxWidth: 200,
+                            cursor: 'pointer',
+                            borderColor: isSelected ? 'primary.main' : 'warning.main',
+                            borderWidth: 2,
+                            bgcolor: isSelected ? 'action.selected' : undefined,
+                          }}
+                        >
+                          <Typography variant="subtitle2">{card?.name ?? 'Unknown'}</Typography>
+                          {card?.type === 'crypt' && (
+                            <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
+                              {card.clans.map((clan) => (
+                                <ClanIcon key={clan} clan={clan} size={32} />
+                              ))}
+                              {card.title && (
+                                <Typography variant="caption" color="text.secondary">{card.title}</Typography>
+                              )}
+                              {card.adv && (
+                                <Chip label="ADV" size="small" color="info" sx={{ height: 18, fontSize: 10 }} />
+                              )}
+                            </Stack>
+                          )}
+                          {card?.cardText && (
+                            <Collapse in={expandedCards.has(u.instanceId)}>
+                              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', whiteSpace: 'pre-line' }}>
+                                {card.cardText}
+                              </Typography>
+                            </Collapse>
+                          )}
+                        </Paper>
+                      </Badge>
+                    )}
+                  </Tooltip>
                 </Badge>
               )
             })}
-          </Stack>
-        </div>
+        </CardRow>
       )}
 
       <Divider />
 
-      <PlayerHand hand={gameView.self.hand} onPlay={handlePlayFromHand} />
+      <PlayerHand hand={gameView.self.hand} showImages={showImages} onPlay={handlePlayFromHand} />
     </Stack>
   )
 }

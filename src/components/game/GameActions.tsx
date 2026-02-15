@@ -1,5 +1,6 @@
 'use client'
 
+import ImageIcon from '@mui/icons-material/Image'
 import Avatar from '@mui/material/Avatar'
 import Button from '@mui/material/Button'
 import IconButton from '@mui/material/IconButton'
@@ -16,6 +17,8 @@ type GameActionsProps = {
   librarySize: number
   cryptSize: number
   pool: number
+  showImages: boolean
+  onToggleImages: () => void
 }
 
 const phases: TurnPhase[] = ['unlock', 'master', 'minion', 'influence', 'discard']
@@ -33,7 +36,7 @@ const nextPhaseLabel = (current: TurnPhase) => {
   return phaseLabels[phases[idx + 1]] ?? 'End Turn'
 }
 
-const GameActions = ({ gameId, playerId, phase, librarySize, cryptSize, pool }: GameActionsProps) => {
+const GameActions = ({ gameId, playerId, phase, librarySize, cryptSize, pool, showImages, onToggleImages }: GameActionsProps) => {
   const confirm = useConfirm()
   const act = (action: Parameters<typeof performGameAction>[2]) => performGameAction(gameId, playerId, action)
 
@@ -51,6 +54,9 @@ const GameActions = ({ gameId, playerId, phase, librarySize, cryptSize, pool }: 
 
   return (
     <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center" justifyContent="space-around">
+      <IconButton size="small" onClick={onToggleImages} color={showImages ? 'info' : 'default'} aria-label="Toggle card images">
+        <ImageIcon />
+      </IconButton>
       <Stack direction="row" alignItems="center" sx={{ gap: 0 }}>
         <IconButton
           size="small"
