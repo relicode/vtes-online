@@ -2,8 +2,7 @@ import Container from '@mui/material/Container'
 import Typography from '@mui/material/Typography'
 
 import { getGameView } from '$/actions/game-actions'
-import GameBoard from '$/components/game/GameBoard'
-import GamePoller from '$/components/game/GamePoller'
+import PlayerGameContent from '$/components/game/PlayerGameContent'
 
 type PlayerGamePageProps = {
   params: Promise<{ gameId: string; userId: string }>
@@ -21,16 +20,7 @@ const PlayerGamePage = async ({ params }: PlayerGamePageProps) => {
     )
   }
 
-  return (
-    <GamePoller>
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" sx={{ mb: 2 }}>
-          {result.data.name}
-        </Typography>
-        <GameBoard gameView={result.data} />
-      </Container>
-    </GamePoller>
-  )
+  return <PlayerGameContent gameId={gameId} playerId={userId} initialState={result.data} />
 }
 
 export default PlayerGamePage

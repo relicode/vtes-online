@@ -1,62 +1,11 @@
 'use server'
 
+import { toGameSummary, toGameView } from '$/lib/game-views'
 import redis from '$/lib/redis'
 import type { ActionResult } from '$/types/actions'
-import type { GameState, GameSummary, GameView, OpponentView, PlayerState, PlayerSummary } from '$/types/game'
-
-// ---------------------------------------------------------------------------
-// Derivation helpers
-// ---------------------------------------------------------------------------
-
-const toPlayerSummary = (player: PlayerState): PlayerSummary => ({
-  playerId: player.playerId,
-  name: player.name,
-  pool: player.pool,
-  vampiresInPlay: player.minions.filter((m) => !m.inTorpor).length,
-})
-
-const toGameSummary = (game: GameState): GameSummary => ({
-  id: game.id,
-  name: game.name,
-  status: game.status,
-  playerCount: game.playerOrder.length,
-  players: game.playerOrder.map((id) => toPlayerSummary(game.players[id])),
-  round: game.round,
-  turnCount: game.turnCount,
-  activePlayer: game.turn.activePlayer,
-})
-
-const toOpponentView = (player: PlayerState): OpponentView => ({
-  playerId: player.playerId,
-  name: player.name,
-  pool: player.pool,
-  librarySize: player.library.length,
-  cryptSize: player.crypt.length,
-  handSize: player.hand.length,
-  ashHeap: player.ashHeap,
-  removed: player.removed,
-  minions: player.minions,
-  libraryCardsInPlay: player.libraryCardsInPlay,
-  uncontrolled: player.uncontrolled.map((u) => ({ instanceId: u.instanceId, blood: u.blood })),
-  ousted: player.ousted,
-  victoryPoints: player.victoryPoints,
-})
-
-const toGameView = (game: GameState, playerId: string): GameView => ({
-  id: game.id,
-  name: game.name,
-  status: game.status,
-  createdAt: game.createdAt,
-  playerOrder: game.playerOrder,
-  round: game.round,
-  turnCount: game.turnCount,
-  influenceCounter: game.influenceCounter,
-  turn: game.turn,
-  edge: game.edge,
-  contestedCards: game.contestedCards,
-  self: game.players[playerId],
-  opponents: game.playerOrder.filter((id) => id !== playerId).map((id) => toOpponentView(game.players[id])),
-})
+import type { GameState, GameSummary, GameView, PlayerState } from '$/types/game'
+import type { ActionLogEntry, GameAction } from '$/types/game-actions'
+import { applyGameAction } from './game-action-handlers'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -155,13 +104,18 @@ const joinGame = async (gameId: string, userId: string, playerName: string): Pro
   game.playerOrder.push(userId)
   game.players[userId] = createEmptyPlayer(userId, trimmedPlayerName)
 
-  await redis.pipeline().set(`game:${gameId}`, JSON.stringify(game)).sadd(`game:${gameId}:players`, userId).exec()
+  await redis
+    .pipeline()
+    .set(`game:${gameId}`, JSON.stringify(game))
+    .sadd(`game:${gameId}:players`, userId)
+    .publish(`game:${gameId}:events`, JSON.stringify({ type: 'gameStateChanged' }))
+    .exec()
 
   return { success: true, data: toGameSummary(game) }
 }
 
 const getGameView = async (gameId: string, userId: string): Promise<ActionResult<GameView>> => {
-  const raw = await redis.get(`game:${gameId}`)
+  const [raw, logEntries] = await Promise.all([redis.get(`game:${gameId}`), redis.lrange(`game:${gameId}:log`, 0, 49)])
   if (!raw) {
     return { success: false, error: 'Game not found' }
   }
@@ -171,7 +125,46 @@ const getGameView = async (gameId: string, userId: string): Promise<ActionResult
     return { success: false, error: 'Player not in game' }
   }
 
-  return { success: true, data: toGameView(game, userId) }
+  const actionLog = logEntries.map((entry) => JSON.parse(entry) as ActionLogEntry)
+  return { success: true, data: toGameView(game, userId, actionLog) }
 }
 
-export { createGame, getGame, getGameView, joinGame }
+const performGameAction = async (
+  gameId: string,
+  playerId: string,
+  action: GameAction
+): Promise<ActionResult<ActionLogEntry>> => {
+  const raw = await redis.get(`game:${gameId}`)
+  if (!raw) return { success: false, error: 'Game not found' }
+
+  const game = JSON.parse(raw) as GameState
+  if (game.status !== 'active') return { success: false, error: 'Game is not active' }
+
+  const player = game.players[playerId]
+  if (!player) return { success: false, error: 'Player not in game' }
+
+  const cloned = structuredClone(game)
+  const result = applyGameAction(cloned, playerId, action)
+  if (!result.success) return result
+
+  const entry: ActionLogEntry = {
+    id: crypto.randomUUID(),
+    timestamp: new Date().toISOString(),
+    playerId,
+    playerName: player.name,
+    type: action.type,
+    description: `${player.name} ${result.description}`,
+  }
+
+  await redis
+    .pipeline()
+    .set(`game:${gameId}`, JSON.stringify(result.state))
+    .lpush(`game:${gameId}:log`, JSON.stringify(entry))
+    .ltrim(`game:${gameId}:log`, 0, 199)
+    .publish(`game:${gameId}:events`, JSON.stringify({ type: 'gameStateChanged' }))
+    .exec()
+
+  return { success: true, data: entry }
+}
+
+export { createGame, getGame, getGameView, joinGame, performGameAction }
