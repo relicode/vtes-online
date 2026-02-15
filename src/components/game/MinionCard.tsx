@@ -74,7 +74,7 @@ const MinionCard = ({ minion, selected, onSelect, onToggleLock, onAdjustBlood }:
               p: 1.5,
               cursor: 'pointer',
               borderColor: selected ? 'primary.main' : card?.type === 'crypt' ? 'warning.main' : 'success.main',
-              borderWidth: selected ? 2 : 1,
+              borderWidth: 2,
               bgcolor: selected ? 'action.selected' : undefined,
             }}
           >

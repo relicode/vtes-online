@@ -61,13 +61,15 @@ const handleDrawFromCrypt = (state: GameState, playerId: string, count: number):
   return { success: true, state, description: `drew ${actual} card${actual !== 1 ? 's' : ''} from crypt` }
 }
 
-const handleToggleMinionLock = (state: GameState, playerId: string, minionInstanceId: string): HandlerResult => {
+const handleToggleLock = (state: GameState, playerId: string, instanceId: string): HandlerResult => {
   const player = state.players[playerId]
-  const minion = player.minions.find((m) => m.instanceId === minionInstanceId)
-  if (!minion) return { success: false, error: 'Minion not found' }
-  minion.locked = !minion.locked
-  const name = getCardById(minion.cardId)?.name ?? 'a minion'
-  return { success: true, state, description: `${minion.locked ? 'locked' : 'unlocked'} ${name}` }
+  const target =
+    player.minions.find((m) => m.instanceId === instanceId) ??
+    player.libraryCardsInPlay.find((c) => c.instanceId === instanceId)
+  if (!target) return { success: false, error: 'Card not found' }
+  target.locked = !target.locked
+  const name = getCardById(target.cardId)?.name ?? 'a card'
+  return { success: true, state, description: `${target.locked ? 'locked' : 'unlocked'} ${name}` }
 }
 
 const handleAdjustMinionCounters = (
@@ -301,8 +303,8 @@ const applyGameAction = (state: GameState, playerId: string, action: GameAction)
       return handleDrawFromLibrary(state, playerId, action.count ?? 1)
     case 'drawFromCrypt':
       return handleDrawFromCrypt(state, playerId, action.count ?? 1)
-    case 'toggleMinionLock':
-      return handleToggleMinionLock(state, playerId, action.minionInstanceId)
+    case 'toggleLock':
+      return handleToggleLock(state, playerId, action.instanceId)
     case 'adjustMinionCounters':
       return handleAdjustMinionCounters(state, playerId, action.minionInstanceId, action.delta)
     case 'adjustPool':

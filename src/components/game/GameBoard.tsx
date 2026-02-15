@@ -2,6 +2,8 @@
 
 import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
+import LockIcon from '@mui/icons-material/Lock'
+import LockOpenIcon from '@mui/icons-material/LockOpen'
 import RemoveIcon from '@mui/icons-material/Remove'
 import Badge from '@mui/material/Badge'
 import Box from '@mui/material/Box'
@@ -77,8 +79,8 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
     }
   }
 
-  const handleToggleLock = (minionInstanceId: string) => {
-    performGameAction(gameId, playerId, { type: 'toggleMinionLock', minionInstanceId })
+  const handleToggleLock = (instanceId: string) => {
+    performGameAction(gameId, playerId, { type: 'toggleLock', instanceId })
   }
 
   const handleAdjustMinionBlood = (minionInstanceId: string, delta: number) => {
@@ -122,20 +124,41 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
               const card = getCardById(c.cardId)
               const isSelected = selectedInPlay.has(c.instanceId)
               return (
-                <Paper
-                  key={c.instanceId}
-                  variant="outlined"
-                  onClick={() => toggleInPlay(c.instanceId)}
-                  sx={{
-                    p: 1.5,
-                    cursor: 'pointer',
-                    borderColor: isSelected ? 'primary.main' : 'success.main',
-                    borderWidth: isSelected ? 2 : 1,
-                    bgcolor: isSelected ? 'action.selected' : undefined,
-                  }}
-                >
-                  <Typography variant="subtitle2">{card?.name ?? 'Unknown'}</Typography>
-                </Paper>
+                <Box key={c.instanceId} sx={{ transform: c.locked ? 'rotate(25deg)' : 'none', transition: 'transform 0.2s' }}>
+                  <Badge
+                    badgeContent={
+                      <IconButton
+                        size="small"
+                        onClick={() => handleToggleLock(c.instanceId)}
+                        sx={{ p: 0.25, bgcolor: 'background.paper', '&:hover': { bgcolor: 'background.paper' }, borderRadius: '50%' }}
+                      >
+                        {c.locked ? (
+                          <LockIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        ) : (
+                          <LockOpenIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        )}
+                      </IconButton>
+                    }
+                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    slotProps={{
+                      badge: { style: { backgroundColor: 'transparent', boxShadow: 'none', padding: 0, minWidth: 0 } },
+                    }}
+                  >
+                    <Paper
+                      variant="outlined"
+                      onClick={() => toggleInPlay(c.instanceId)}
+                      sx={{
+                        p: 1.5,
+                        cursor: 'pointer',
+                        borderColor: isSelected ? 'primary.main' : 'success.main',
+                        borderWidth: 2,
+                        bgcolor: isSelected ? 'action.selected' : undefined,
+                      }}
+                    >
+                      <Typography variant="subtitle2">{card?.name ?? 'Unknown'}</Typography>
+                    </Paper>
+                  </Badge>
+                </Box>
               )
             })}
             {gameView.self.libraryCardsInPlay.length > 0 && gameView.self.minions.length > 0 && (
@@ -189,7 +212,7 @@ const GameBoard = ({ gameView, gameId, playerId }: GameBoardProps) => {
                       p: 1.5,
                       cursor: 'pointer',
                       borderColor: isSelected ? 'primary.main' : 'warning.main',
-                      borderWidth: isSelected ? 2 : 1,
+                      borderWidth: 2,
                       bgcolor: isSelected ? 'action.selected' : undefined,
                     }}
                   >

@@ -61,7 +61,7 @@ const PlayerHand = ({ hand, onPlay }: PlayerHandProps) => {
                   minWidth: 120,
                   cursor: 'pointer',
                   borderColor: isSelected ? 'primary.main' : card?.type === 'crypt' ? 'warning.main' : 'success.main',
-                  borderWidth: isSelected ? 2 : 1,
+                  borderWidth: 2,
                   bgcolor: isSelected ? 'action.selected' : undefined,
                 }}
               >

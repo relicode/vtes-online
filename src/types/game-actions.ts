@@ -4,7 +4,7 @@
 
 type DrawFromLibrary = { type: 'drawFromLibrary'; count?: number }
 type DrawFromCrypt = { type: 'drawFromCrypt'; count?: number }
-type ToggleMinionLock = { type: 'toggleMinionLock'; minionInstanceId: string }
+type ToggleLock = { type: 'toggleLock'; instanceId: string }
 type AdjustMinionCounters = { type: 'adjustMinionCounters'; minionInstanceId: string; delta: number }
 type AdjustPool = { type: 'adjustPool'; delta: number }
 type MoveCard = {
@@ -25,7 +25,7 @@ type TrashFromPlay = { type: 'trashFromPlay'; instanceIds: string[] }
 type GameAction =
   | DrawFromLibrary
   | DrawFromCrypt
-  | ToggleMinionLock
+  | ToggleLock
   | AdjustMinionCounters
   | AdjustPool
   | MoveCard

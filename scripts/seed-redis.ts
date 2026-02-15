@@ -235,13 +235,13 @@ const seedTestGame = async (redis: Redis, gamePlayers: { userId: string; userNam
     { playerIdx: 0, type: 'drawFromLibrary', desc: 'drew 1 card from library' },
     { playerIdx: 0, type: 'adjustPool', desc: 'lost 2 pool (now 17)' },
     { playerIdx: 1, type: 'drawFromCrypt', desc: 'drew 1 card from crypt' },
-    { playerIdx: 1, type: 'toggleMinionLock', desc: 'locked a minion' },
+    { playerIdx: 1, type: 'toggleLock', desc: 'locked a minion' },
     { playerIdx: 2, type: 'advancePhase', desc: 'advanced to master phase' },
     { playerIdx: 3, type: 'adjustPool', desc: 'gained 1 pool (now 24)' },
     { playerIdx: 3, type: 'setEdge', desc: 'took the Edge' },
     { playerIdx: 4, type: 'drawFromLibrary', desc: 'drew 1 card from library' },
     { playerIdx: 0, type: 'advancePhase', desc: 'advanced to minion phase' },
-    { playerIdx: 2, type: 'toggleMinionLock', desc: 'unlocked a minion' },
+    { playerIdx: 2, type: 'toggleLock', desc: 'unlocked a minion' },
   ]
 
   const logEntries: ActionLogEntry[] = sampleActions.map((a, i) => {
