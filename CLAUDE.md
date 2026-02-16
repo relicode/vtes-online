@@ -67,9 +67,12 @@ The game page (`/game/[gameId]`) uses a `(composed)` route group with Next.js pa
 - `@player` — player-specific hand and controls (renders `null` for spectators at `/game/[gameId]`)
 - `@log` — action log
 
-The layout (`GameLayoutShell.tsx`) arranges these slots responsively. Each slot has both `/game/[gameId]/page.tsx` (spectator) and `/game/[gameId]/[userId]/page.tsx` (player) variants with matching `default.tsx` files.
+The layout (`(composed)/GameLayoutShell.tsx`) arranges these slots responsively. Each slot has both a base `page.tsx` (spectator) and a `[userId]/page.tsx` (player) variant with matching `default.tsx` files.
 
-Each panel is also available as a standalone page outside the composed layout (e.g. `/game/[gameId]/log`, `/game/[gameId]/[userId]/standalone`).
+Standalone pages live outside the `(composed)` route group so they bypass the parallel-route layout:
+
+- `/game/[gameId]/log` — standalone action log
+- `/game/[gameId]/[userId]/standalone` — standalone player controls
 
 ### Redis key patterns
 
