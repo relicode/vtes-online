@@ -92,11 +92,18 @@ There is also a standalone 3D spectator view at `/game-3d/[gameId]` using Three.
 - **Import order** (enforced by prettier plugin): third-party → blank line → `$/` aliased → relative
 - **`'use server'` files can only export functions** — `export type` causes Turbopack build errors. Keep shared types in `src/types/` and import them into action files.
 
-## MCP
+## MCP servers
 
-Use the mui-mcp server to answer any MUI questions --
+Two MCP servers are configured in `.mcp.json` and available during Claude Code sessions:
 
-- 1. call the "useMuiDocs" tool to fetch the docs of the package relevant in the question
-- 2. call the "fetchDocs" tool to fetch any additional docs if needed using ONLY the URLs present in the returned content.
-- 3. repeat steps 1-2 until you have fetched all relevant docs for the given question
-- 4. use the fetched content to answer the question
+### MUI (`@mui/mcp`)
+
+Use for any MUI component, styling, or API questions. Workflow:
+
+1. Call `useMuiDocs` to fetch docs for the relevant package
+2. Call `fetchDocs` to follow up on any URLs in the returned content
+3. Repeat until you have all relevant docs, then answer using the fetched content
+
+### Next.js DevTools (`next-devtools-mcp`)
+
+Provides runtime access to the running Next.js dev server. Use `nextjs_index` to discover available tools, then `nextjs_call` to execute them. Useful for checking compilation errors, listing routes, and inspecting runtime state.

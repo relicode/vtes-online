@@ -67,6 +67,13 @@ docker compose --profile app up
 
 This builds the Next.js standalone container and runs it alongside Redis. The app listens on port 3000.
 
+## AI-assisted development
+
+This project includes two [MCP](https://modelcontextprotocol.io/) servers (configured in `.mcp.json`) for use with Claude Code and other AI coding tools:
+
+- **MUI** (`@mui/mcp`) — fetches Material UI documentation on demand for component and styling questions
+- **Next.js DevTools** (`next-devtools-mcp`) — connects to the running dev server for runtime diagnostics, route inspection, and error checking
+
 ## Scripts
 
 | Command                   | Description                |
