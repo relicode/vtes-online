@@ -4,7 +4,6 @@ import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Container from '@mui/material/Container'
-import Grid from '@mui/material/Grid'
 import Snackbar from '@mui/material/Snackbar'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
@@ -95,55 +94,45 @@ const DeckEditor = ({ deck: initialDeck }: DeckEditorProps) => {
 
   return (
     <Stack sx={{ flex: 1, minHeight: 0 }}>
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
-        <Container maxWidth="lg" sx={{ py: 2 }}>
-          <Typography variant="h4" sx={{ mb: 2 }}>
-            Edit Deck
+      <Container maxWidth="lg" sx={{ py: 2, flexShrink: 0 }}>
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+          <Typography variant="h4">Edit Deck</Typography>
+          <Typography variant="body2" color={cryptValid ? 'success.main' : 'error.main'}>
+            Crypt: {cryptTotal}
           </Typography>
+          <Typography variant="body2" color={libraryValid ? 'success.main' : 'error.main'}>
+            Library: {libraryTotal}
+          </Typography>
+        </Stack>
 
-          <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-            <TextField label="Deck Name" value={name} onChange={(e) => setName(e.target.value)} size="small" />
-            <TextField
-              label="Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              size="small"
-              sx={{ flex: 1 }}
-            />
-          </Stack>
+        <Stack direction="row" spacing={2}>
+          <TextField label="Deck Name" value={name} onChange={(e) => setName(e.target.value)} size="small" />
+          <TextField
+            label="Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            size="small"
+            sx={{ flex: 1 }}
+          />
+        </Stack>
+      </Container>
 
-          <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-            <Typography variant="body2" color={cryptValid ? 'success.main' : 'error.main'}>
-              Crypt: {cryptTotal}
-            </Typography>
-            <Typography variant="body2" color={libraryValid ? 'success.main' : 'error.main'}>
-              Library: {libraryTotal}
-            </Typography>
-          </Stack>
-
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <CardPicker onAddCard={handleAddCard} />
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <DeckList
-                title="Crypt"
-                entries={crypt}
-                onRemove={handleRemoveCrypt}
-                onUpdateCount={handleUpdateCryptCount}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <DeckList
-                title="Library"
-                entries={library}
-                onRemove={handleRemoveLibrary}
-                onUpdateCount={handleUpdateLibraryCount}
-              />
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
+      <Stack direction="row" spacing={3} sx={{ flex: 1, minHeight: 0, px: 3, pb: 2 }}>
+        <Box sx={{ flex: 1, display: 'flex', minHeight: 0 }}>
+          <CardPicker onAddCard={handleAddCard} />
+        </Box>
+        <Box sx={{ flex: 1, display: 'flex', minHeight: 0 }}>
+          <DeckList title="Crypt" entries={crypt} onRemove={handleRemoveCrypt} onUpdateCount={handleUpdateCryptCount} />
+        </Box>
+        <Box sx={{ flex: 1, display: 'flex', minHeight: 0 }}>
+          <DeckList
+            title="Library"
+            entries={library}
+            onRemove={handleRemoveLibrary}
+            onUpdateCount={handleUpdateLibraryCount}
+          />
+        </Box>
+      </Stack>
 
       <Stack
         direction="row"
@@ -152,7 +141,7 @@ const DeckEditor = ({ deck: initialDeck }: DeckEditorProps) => {
         sx={{ px: 3, py: 1.5, borderTop: 1, borderColor: 'divider', flexShrink: 0 }}
       >
         <form action={formAction}>
-          <Button type="submit" variant="contained" disabled={isPending}>
+          <Button type="submit" variant="contained" disabled={isPending || validationErrors.length > 0}>
             {isPending ? 'Saving...' : 'Save Deck'}
           </Button>
         </form>

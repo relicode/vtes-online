@@ -1,15 +1,67 @@
 'use server'
 
+import { toGameSummary, toGameView } from '$/lib/game-views'
 import redis from '$/lib/redis'
 import type { ActionResult } from '$/types/actions'
-import type { GamePublicState, PlayerPrivateState } from '$/types/game'
+import type { GameListItem, GameState, GameSummary, GameView, PlayerState } from '$/types/game'
+import type { ActionLogEntry, GameAction } from '$/types/game-actions'
+import { applyGameAction } from './game-action-handlers'
 
-const getGame = async (gameId: string): Promise<ActionResult<GamePublicState>> => {
-  const raw = await redis.get(`game:${gameId}`)
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const createEmptyPlayer = (playerId: string, name: string): PlayerState => ({
+  playerId,
+  deckId: '',
+  name,
+  pool: 30,
+  library: [],
+  crypt: [],
+  hand: [],
+  ashHeap: [],
+  removed: [],
+  controlledCrypt: [],
+  libraryCardsInPlay: [],
+  uncontrolledCrypt: [],
+  ousted: false,
+  victoryPoints: 0,
+})
+
+// ---------------------------------------------------------------------------
+// Actions
+// ---------------------------------------------------------------------------
+
+const listGames = async (): Promise<ActionResult<GameListItem[]>> => {
+  const gameIds = await redis.smembers('games')
+  if (gameIds.length === 0) return { success: true, data: [] }
+
+  const pipeline = redis.pipeline()
+  for (const id of gameIds) pipeline.get(`game:${id}`)
+  const results = await pipeline.exec()
+
+  const items: GameListItem[] = []
+  for (const [err, raw] of results ?? []) {
+    if (err || !raw) continue
+    const game = JSON.parse(raw as string) as GameState
+    items.push({
+      id: game.id,
+      name: game.name,
+      status: game.status,
+      players: game.playerOrder.map((pid) => ({ playerId: pid, name: game.players[pid].name })),
+    })
+  }
+
+  return { success: true, data: items }
+}
+
+const getGame = async (gameId: string): Promise<ActionResult<GameSummary>> => {
+  const [raw, logEntries] = await Promise.all([redis.get(`game:${gameId}`), redis.lrange(`game:${gameId}:log`, 0, 49)])
   if (!raw) {
     return { success: false, error: 'Game not found' }
   }
-  return { success: true, data: JSON.parse(raw) as GamePublicState }
+  const actionLog = logEntries.map((entry) => JSON.parse(entry) as ActionLogEntry)
+  return { success: true, data: toGameSummary(JSON.parse(raw) as GameState, actionLog) }
 }
 
 const MAX_NAME_LENGTH = 200
@@ -18,7 +70,7 @@ const createGame = async (
   name: string,
   creatorUserId: string,
   creatorName: string
-): Promise<ActionResult<GamePublicState>> => {
+): Promise<ActionResult<GameSummary>> => {
   const trimmedName = name.trim()
   if (!trimmedName || trimmedName.length > MAX_NAME_LENGTH) {
     return { success: false, error: 'Game name is required and must be under 200 characters' }
@@ -27,26 +79,34 @@ const createGame = async (
   const gameId = crypto.randomUUID()
   const now = new Date().toISOString()
 
-  const game: GamePublicState = {
+  const game: GameState = {
     id: gameId,
     name: trimmedName,
     status: 'waiting',
-    players: [{ userId: creatorUserId, name: creatorName.trim(), poolSize: 30, vampiresInPlay: 0 }],
-    currentTurn: creatorUserId,
-    turnNumber: 0,
     createdAt: now,
+    playerOrder: [creatorUserId],
+    round: 0,
+    turnCount: 0,
+    influenceCounter: 1,
+    turn: { activePlayer: creatorUserId, phase: 'unlock' },
+    edge: {},
+    contestedCards: [],
+    players: {
+      [creatorUserId]: createEmptyPlayer(creatorUserId, creatorName.trim()),
+    },
   }
 
   await redis
     .pipeline()
     .set(`game:${gameId}`, JSON.stringify(game))
     .sadd(`game:${gameId}:players`, creatorUserId)
+    .sadd('games', gameId)
     .exec()
 
-  return { success: true, data: game }
+  return { success: true, data: toGameSummary(game, []) }
 }
 
-const joinGame = async (gameId: string, userId: string, playerName: string): Promise<ActionResult<GamePublicState>> => {
+const joinGame = async (gameId: string, userId: string, playerName: string): Promise<ActionResult<GameSummary>> => {
   const trimmedPlayerName = playerName.trim()
   if (!trimmedPlayerName || trimmedPlayerName.length > MAX_NAME_LENGTH) {
     return { success: false, error: 'Player name is required and must be under 200 characters' }
@@ -57,66 +117,86 @@ const joinGame = async (gameId: string, userId: string, playerName: string): Pro
     return { success: false, error: 'Game not found' }
   }
 
-  const game = JSON.parse(raw) as GamePublicState
+  const game = JSON.parse(raw) as GameState
   if (game.status !== 'waiting') {
     return { success: false, error: 'Game already started' }
   }
 
-  if (game.players.some((p) => p.userId === userId)) {
+  if (game.players[userId]) {
     return { success: false, error: 'Already in game' }
   }
 
-  game.players.push({ userId, name: trimmedPlayerName, poolSize: 30, vampiresInPlay: 0 })
+  game.playerOrder.push(userId)
+  game.players[userId] = createEmptyPlayer(userId, trimmedPlayerName)
 
-  await redis.pipeline().set(`game:${gameId}`, JSON.stringify(game)).sadd(`game:${gameId}:players`, userId).exec()
+  await redis
+    .pipeline()
+    .set(`game:${gameId}`, JSON.stringify(game))
+    .sadd(`game:${gameId}:players`, userId)
+    .publish(`game:${gameId}:events`, JSON.stringify({ type: 'gameStateChanged' }))
+    .exec()
 
-  return { success: true, data: game }
+  return { success: true, data: toGameSummary(game, []) }
 }
 
-const getPlayerState = async (gameId: string, userId: string): Promise<ActionResult<PlayerPrivateState>> => {
-  const raw = await redis.get(`game:${gameId}:player:${userId}`)
+const getGameView = async (gameId: string, userId: string): Promise<ActionResult<GameView>> => {
+  const [raw, logEntries] = await Promise.all([redis.get(`game:${gameId}`), redis.lrange(`game:${gameId}:log`, 0, 49)])
   if (!raw) {
-    return { success: false, error: 'Player state not found' }
-  }
-  return { success: true, data: JSON.parse(raw) as PlayerPrivateState }
-}
-
-const initPlayerState = async (gameId: string, userId: string): Promise<ActionResult<PlayerPrivateState>> => {
-  const state: PlayerPrivateState = {
-    userId,
-    gameId,
-    hand: [],
-    librarySize: 0,
-    cryptSize: 0,
-    pool: 30,
-    vampiresInPlay: [],
-    uncontrolledRegion: [],
+    return { success: false, error: 'Game not found' }
   }
 
-  await redis.set(`game:${gameId}:player:${userId}`, JSON.stringify(state))
-  return { success: true, data: state }
+  const game = JSON.parse(raw) as GameState
+  if (!game.players[userId]) {
+    return { success: false, error: 'Player not in game' }
+  }
+
+  const actionLog = logEntries.map((entry) => JSON.parse(entry) as ActionLogEntry)
+  return { success: true, data: toGameView(game, userId, actionLog) }
 }
 
-const updatePlayerState = async (
+const performGameAction = async (
   gameId: string,
-  userId: string,
-  callerUserId: string,
-  updates: Partial<Omit<PlayerPrivateState, 'userId' | 'gameId'>>
-): Promise<ActionResult<PlayerPrivateState>> => {
-  if (userId !== callerUserId) {
-    return { success: false, error: 'Not authorized to update this player state' }
+  playerId: string,
+  action: GameAction
+): Promise<ActionResult<ActionLogEntry>> => {
+  const raw = await redis.get(`game:${gameId}`)
+  if (!raw) return { success: false, error: 'Game not found' }
+
+  const game = JSON.parse(raw) as GameState
+  if (game.status !== 'active') return { success: false, error: 'Game is not active' }
+
+  const player = game.players[playerId]
+  if (!player) return { success: false, error: 'Player not in game' }
+
+  const cloned = structuredClone(game)
+  const result = applyGameAction(cloned, playerId, action)
+  if (!result.success) return result
+
+  const entry: ActionLogEntry = {
+    id: crypto.randomUUID(),
+    timestamp: new Date().toISOString(),
+    playerId,
+    playerName: player.name,
+    type: action.type,
+    description: `${player.name} ${result.description}`,
   }
 
-  const raw = await redis.get(`game:${gameId}:player:${userId}`)
-  if (!raw) {
-    return { success: false, error: 'Player state not found' }
-  }
+  await redis
+    .pipeline()
+    .set(`game:${gameId}`, JSON.stringify(result.state))
+    .lpush(`game:${gameId}:log`, JSON.stringify(entry))
+    .ltrim(`game:${gameId}:log`, 0, 199)
+    .publish(`game:${gameId}:events`, JSON.stringify({ type: 'gameStateChanged' }))
+    .exec()
 
-  const state = JSON.parse(raw) as PlayerPrivateState
-  const updated: PlayerPrivateState = { ...state, ...updates }
-
-  await redis.set(`game:${gameId}:player:${userId}`, JSON.stringify(updated))
-  return { success: true, data: updated }
+  return { success: true, data: entry }
 }
 
-export { createGame, getGame, getPlayerState, initPlayerState, joinGame, updatePlayerState }
+const getActionLog = async (gameId: string): Promise<ActionResult<ActionLogEntry[]>> => {
+  const exists = await redis.exists(`game:${gameId}`)
+  if (!exists) return { success: false, error: 'Game not found' }
+  const entries = await redis.lrange(`game:${gameId}:log`, 0, 49)
+  return { success: true, data: entries.map((entry) => JSON.parse(entry) as ActionLogEntry) }
+}
+
+export { createGame, getActionLog, getGame, getGameView, joinGame, listGames, performGameAction }

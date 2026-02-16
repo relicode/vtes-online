@@ -2,25 +2,92 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Documentation
+
+- `README.md` — project overview, setup instructions, and how the game works (human-readable)
+- `CLAUDE.md` — this file; architecture, conventions, and implementation details for Claude Code
+- `docs/VTES_RULES.md` — comprehensive VTES card game rules reference covering card types, turn structure, combat, political actions, and victory conditions. Consult this when implementing game mechanics.
+
 ## Commands
 
-- `npm run dev` — start dev server
+- `npm run dev` — start dev server (requires Redis running, see below)
 - `npm run build` — production build
 - `npm run lint` — ESLint
 - `npm run lint:prettier` — Prettier check
 - `npm run lint:typescript` — TypeScript type check (`tsc --noEmit`)
 - `npm run format` — auto-fix ESLint + Prettier
+- `npm run seed` — seed Redis with test game data
+- `npm run seed:flush` — flush Redis and re-seed
 
 No test framework is configured yet.
+
+## Infrastructure
+
+Redis is the sole data store (no SQL database). Start it with `docker compose up -d redis`. The app connects to `REDIS_URL` (default `redis://localhost:6379`). For production, `docker compose --profile app up` runs both Redis and the standalone Next.js container.
 
 ## Architecture
 
 Next.js 16 App Router with React 19 and MUI Material v7. React Compiler is enabled (`reactCompiler: true` in `next.config.ts`). Do not use manual `useMemo`, `useCallback`, or `React.memo` — the compiler handles memoization automatically.
 
-- `src/app/` — App Router pages and layouts (server components by default)
-- `src/components/` — shared components
-- `src/theme.ts` — MUI theme config (CSS variables, light/dark color schemes, Inter font)
-- `src/components/ThemeRegistry.tsx` — client component wrapping `AppRouterCacheProvider` + `ThemeProvider` + `CssBaseline` + `GlobalStyles`
+### Data flow
+
+Game action lifecycle:
+
+1. **Client dispatches** — player triggers a `GameAction` (e.g. `drawFromLibrary`, `toggleLock`) which is sent to the server via a Next.js Server Action (`performGameAction` in `src/actions/game-actions.ts`)
+2. **Server applies mutation** — the action handler `structuredClone`s the `GameState`, applies the mutation, persists the new state to Redis, and appends an `ActionLogEntry` to the capped log
+3. **SSE broadcasts** — the server publishes to the `game:{gameId}:events` Redis Pub/Sub channel; connected clients receive the updated `GameView` (player-specific, hides opponents' hidden cards) or `GameSummary` (public spectator view) via SSE
+4. **Client updates** — `useGameEventStream` replaces local state with the incoming view and the action log entry appears in the action log panel
+
+Key files:
+
+- `src/actions/` — Server Actions (`'use server'`). All mutations go through here. Each action returns `ActionResult<T>` (discriminated union: `{ success: true, data: T } | { success: false, error: string }`).
+- `src/lib/redis.ts` — singleton ioredis client (cached on `globalThis` in dev)
+- `src/lib/game-views.ts` — pure projection functions that transform authoritative `GameState` into `GameView` or `GameSummary`
+
+### Real-time updates
+
+SSE endpoint at `/api/game/[gameId]/events` using Redis Pub/Sub. Server subscribes to `game:{gameId}:events` channel; mutations publish to that channel after writing state. Client-side `useGameEventStream` hook (in `src/components/game/GameEventStream.tsx`) connects via `EventSource` and falls back to `router.refresh()` polling on error.
+
+### Game engine
+
+Game actions use a discriminated union (`GameAction` in `src/types/game-actions.ts`). The dispatcher `applyGameAction` in `src/actions/game-action-handlers.ts` pattern-matches on `action.type` and applies mutations to a `structuredClone`'d `GameState`. Action log entries are stored in a capped Redis list (`game:{gameId}:log`, 200 entries).
+
+### Key data types
+
+- `src/types/game.ts` — `GameState` (authoritative server state), `GameView` (per-player view), `PlayerState`, turn state machine (`TurnPhase`, `ActionState`, `CombatState`)
+- `src/types/card.ts` — `CryptCard`, `LibraryCard`, `Card` union; discipline casing convention: lowercase = inferior, UPPERCASE = superior
+- `src/types/user.ts` — `User`, `Deck`, `DeckCardEntry`
+- `src/data/cards.ts` — parses `crypt.json` / `library.json` into typed card arrays; card images served from `/cards/`
+
+### Game route — parallel routes
+
+The game page (`/game/[gameId]`) uses a `(composed)` route group with Next.js parallel routes to render three independent slots in a single layout:
+
+- `@public` — public game board (spectator view, visible to all). Append `?gfx=3d` for a 3D tabletop perspective.
+- `@player` — player-specific hand and controls (renders `null` for spectators at `/game/[gameId]`)
+- `@log` — action log
+
+The layout (`(composed)/GameLayoutShell.tsx`) arranges these slots responsively. Each slot has both a base `page.tsx` (spectator) and a `[userId]/page.tsx` (player) variant with matching `default.tsx` files.
+
+Standalone pages live outside the `(composed)` route group so they bypass the parallel-route layout:
+
+- `/game/[gameId]/log` — standalone action log
+- `/game/[gameId]/[userId]/standalone` — standalone player controls
+
+### Redis key patterns
+
+- `games` — set of all game IDs
+- `users` — set of all user IDs
+- `game:{gameId}` — JSON-serialized `GameState`
+- `game:{gameId}:log` — capped list of `ActionLogEntry` JSON (200 entries, newest first via `LPUSH`)
+- `game:{gameId}:players` — set of player IDs
+- `game:{gameId}:events` — Pub/Sub channel for SSE notifications
+
+### Adding a new game action
+
+1. Add the action type to the `GameAction` discriminated union in `src/types/game-actions.ts`
+2. Write a handler function in `src/actions/game-action-handlers.ts` returning `HandlerResult`
+3. Add the `case` to the `applyGameAction` switch in the same file
 
 ## Conventions
 
@@ -28,3 +95,21 @@ Next.js 16 App Router with React 19 and MUI Material v7. React Compiler is enabl
 - **MUI imports**: individual paths — `import Button from '@mui/material/Button'`, never destructured barrel imports
 - **No semicolons**, single quotes, 120 char print width, es5 trailing commas
 - **Import order** (enforced by prettier plugin): third-party → blank line → `$/` aliased → relative
+- **`'use server'` files can only export functions** — `export type` causes Turbopack build errors. Keep shared types in `src/types/` and import them into action files.
+- **Use `<Stack>` instead of `<Box sx={{ display: 'flex', flexDirection: 'column' }}>`** — MUI Stack is the semantic equivalent and keeps markup concise. Only use Box for flex columns when you need conditional `flexDirection` or other non-trivial dynamic props.
+
+## MCP servers
+
+Two MCP servers are configured in `.mcp.json` and available during Claude Code sessions:
+
+### MUI (`@mui/mcp`)
+
+Use for any MUI component, styling, or API questions. Workflow:
+
+1. Call `useMuiDocs` to fetch docs for the relevant package
+2. Call `fetchDocs` to follow up on any URLs in the returned content
+3. Repeat until you have all relevant docs, then answer using the fetched content
+
+### Next.js DevTools (`next-devtools-mcp`)
+
+Provides runtime access to the running Next.js dev server. Use `nextjs_index` to discover available tools, then `nextjs_call` to execute them. Useful for checking compilation errors, listing routes, and inspecting runtime state.

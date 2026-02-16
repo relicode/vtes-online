@@ -1,199 +1,57 @@
-import type { CryptCard, LibraryCard } from '$/types/card'
+import type { Card, Clan, CryptCard, Discipline, LibraryCard, LibraryCardType } from '$/types/card'
+import rawCrypt from './crypt.json'
+import rawLibrary from './library.json'
 
-const cryptCards: CryptCard[] = [
-  {
-    id: 'crypt-001',
-    name: 'Arika',
-    type: 'crypt',
-    clan: 'Ventrue',
-    capacity: 11,
-    disciplines: ['Animalism', 'Auspex', 'Dominate', 'Fortitude', 'Presence'],
-    group: 2,
-    sect: 'Camarilla',
-    text: 'Camarilla Inner Circle: Once during your minion phase, Arika may burn 1 blood to get +1 bleed for the current action.',
-  },
-  {
-    id: 'crypt-002',
-    name: 'Pentex Subversion Target',
-    type: 'crypt',
-    clan: 'Malkavian',
-    capacity: 9,
-    disciplines: ['Auspex', 'Dominate', 'Obfuscate'],
-    group: 2,
-    sect: 'Camarilla',
-    text: 'Camarilla Primogen: +1 bleed.',
-  },
-  {
-    id: 'crypt-003',
-    name: 'Stanislava',
-    type: 'crypt',
-    clan: 'Toreador',
-    capacity: 10,
-    disciplines: ['Auspex', 'Celerity', 'Dominate', 'Presence'],
-    group: 2,
-    sect: 'Camarilla',
-    text: 'Camarilla Prince of Prague: Stanislava gets +1 intercept against younger vampires.',
-  },
-  {
-    id: 'crypt-004',
-    name: 'Hektor',
-    type: 'crypt',
-    clan: 'Brujah',
-    capacity: 9,
-    disciplines: ['Celerity', 'Potence', 'Presence'],
-    group: 4,
-    sect: 'Camarilla',
-    text: 'Camarilla: When Hektor enters combat, he gets +1 strength for the first round.',
-  },
-  {
-    id: 'crypt-005',
-    name: 'Enkidu, the Noah',
-    type: 'crypt',
-    clan: 'Gangrel',
-    capacity: 11,
-    disciplines: ['Animalism', 'Celerity', 'Fortitude', 'Potence', 'Protean'],
-    group: 4,
-    sect: 'Independent',
-    text: 'Independent: Enkidu may enter combat with a ready minion as a +1 stealth action. +1 strength.',
-  },
-  {
-    id: 'crypt-006',
-    name: 'Cybele',
-    type: 'crypt',
-    clan: 'Baali',
-    capacity: 10,
-    disciplines: ['Dominate', 'Obfuscate', 'Presence', 'Thaumaturgy'],
-    group: 2,
-    sect: 'Independent',
-    text: 'Independent: During your untap phase, you may move 1 blood from the blood bank to Cybele.',
-  },
-]
+const localUrl = (url: string) => '/cards/' + url.split('/').pop()
 
-const libraryCards: LibraryCard[] = [
-  {
-    id: 'lib-001',
-    name: 'Govern the Unaligned',
-    type: 'library',
-    cardType: 'Action',
-    discipline: 'Dominate',
-    text: '+1 stealth action. If this acting vampire is older than 4 capacity, they get +1 bleed. Otherwise, move 3 blood from the blood bank to a younger vampire in your uncontrolled region.',
-  },
-  {
-    id: 'lib-002',
-    name: 'Deflection',
-    type: 'library',
-    cardType: 'Reaction',
-    discipline: 'Dominate',
-    text: 'Only usable during a bleed against you. Change the target of the bleed to another Methuselah.',
-  },
-  {
-    id: 'lib-003',
-    name: 'Bonding',
-    type: 'library',
-    cardType: 'Action Modifier',
-    discipline: 'Dominate',
-    text: '+1 bleed.',
-  },
-  {
-    id: 'lib-004',
-    name: 'Conditioning',
-    type: 'library',
-    cardType: 'Action Modifier',
-    discipline: 'Dominate',
-    text: '+2 bleed.',
-  },
-  {
-    id: 'lib-005',
-    name: 'Blood Doll',
-    type: 'library',
-    cardType: 'Master',
-    poolCost: 0,
-    text: 'Put this card on a vampire you control. During your untap phase, you may move 1 blood from this vampire to your pool.',
-  },
-  {
-    id: 'lib-006',
-    name: 'Villein',
-    type: 'library',
-    cardType: 'Master',
-    poolCost: 0,
-    text: 'Move up to 5 blood from a vampire you control to your pool. That vampire gets -1 bleed this turn.',
-  },
-  {
-    id: 'lib-007',
-    name: 'Dreams of the Sphinx',
-    type: 'library',
-    cardType: 'Master',
-    poolCost: 1,
-    text: 'Master: trifle. Draw 2 cards from your library.',
-  },
-  {
-    id: 'lib-008',
-    name: 'Immortal Grapple',
-    type: 'library',
-    cardType: 'Combat',
-    discipline: 'Potence',
-    text: 'Only usable at close range. Strike: strength +1 damage. Opposing minion cannot use maneuvers or press this round.',
-  },
-  {
-    id: 'lib-009',
-    name: 'Taste of Vitae',
-    type: 'library',
-    cardType: 'Combat',
-    text: 'Strike: steal 1 blood. This vampire gets +1 hand damage for the remainder of this combat.',
-  },
-  {
-    id: 'lib-010',
-    name: 'Second Tradition: Domain',
-    type: 'library',
-    cardType: 'Reaction',
-    text: 'Only usable by a Camarilla Prince or Justicar. +1 intercept. Unlock this reacting vampire.',
-  },
-  {
-    id: 'lib-011',
-    name: 'On the Qui Vive',
-    type: 'library',
-    cardType: 'Reaction',
-    text: 'Unlock this reacting minion. +1 intercept.',
-  },
-  {
-    id: 'lib-012',
-    name: 'Voter Captivation',
-    type: 'library',
-    cardType: 'Political Action',
-    text: 'Called vote. If this referendum passes, gain 3 pool.',
-  },
-  {
-    id: 'lib-013',
-    name: '.44 Magnum',
-    type: 'library',
-    cardType: 'Equipment',
-    poolCost: 2,
-    text: 'Weapon: ranged. Strike: 2 damage.',
-  },
-  {
-    id: 'lib-014',
-    name: 'Carlton Van Wyk',
-    type: 'library',
-    cardType: 'Ally',
-    poolCost: 5,
-    text: 'Unique hunter with 5 life. 1 strength, 1 bleed. Carlton may burn 1 life to untap during your untap phase.',
-  },
-  {
-    id: 'lib-015',
-    name: 'Mr. Winthrop',
-    type: 'library',
-    cardType: 'Retainer',
-    poolCost: 3,
-    text: 'Unique mortal retainer with 1 life. This vampire gets +1 bleed.',
-  },
-]
+const parseCost = (s: string): number => {
+  const n = Number(s)
+  return Number.isNaN(n) ? Infinity : n
+}
 
-const allCards = [...cryptCards, ...libraryCards]
+const parseLife = (cardText: string): number | undefined => {
+  const match = cardText.match(/with (\d+) life/)
+  return match ? Number(match[1]) : undefined
+}
 
-const getCardById = (id: string) => allCards.find((card) => card.id === id)
+const cryptCards: CryptCard[] = rawCrypt.map((c) => ({
+  id: String(c.id),
+  name: c.name,
+  type: 'crypt' as const,
+  clans: c.clans as Clan[],
+  capacity: c.capacity,
+  disciplines: c.disciplines as Discipline[],
+  group: c.group ?? 0,
+  cardText: c.cardText,
+  url: localUrl(c.url),
+  ...(c.title ? { title: c.title } : {}),
+  ...(c.adv ? { adv: c.adv } : {}),
+}))
+
+const libraryCards: LibraryCard[] = rawLibrary.map((c) => {
+  const isAllyOrRetainer = (c.types as string[]).some((t) => t === 'Ally' || t === 'Retainer')
+  const life = isAllyOrRetainer ? parseLife(c.card_text) : undefined
+  return {
+    id: String(c.id),
+    name: c.name,
+    type: 'library' as const,
+    types: c.types as LibraryCardType[],
+    cardText: c.card_text,
+    url: localUrl(c.url),
+    ...(c.clans ? { clans: c.clans as Clan[] } : {}),
+    ...(c.disciplines ? { disciplines: c.disciplines as Discipline[] } : {}),
+    ...(c.pool_cost ? { poolCost: parseCost(c.pool_cost) } : {}),
+    ...(c.blood_cost ? { bloodCost: parseCost(c.blood_cost) } : {}),
+    ...(life !== undefined ? { life } : {}),
+  }
+})
+
+const cardMap = new Map<string, Card>([...cryptCards, ...libraryCards].map((card) => [card.id, card]))
+
+const getCardById = (id: string) => cardMap.get(id)
 
 const getCryptCards = () => cryptCards
 
 const getLibraryCards = () => libraryCards
 
-export { allCards, getCardById, getCryptCards, getLibraryCards }
+export { getCardById, getCryptCards, getLibraryCards }
