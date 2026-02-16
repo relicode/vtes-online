@@ -2,7 +2,7 @@
 
 import { CameraControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace, Vector3, type Vector3Tuple } from 'three'
 
 import type { GameSummary } from '$/types/game'
@@ -78,13 +78,12 @@ const createMarbleTexture = () => {
 }
 
 const MarbleFloor = () => {
-  const texRef = useRef<CanvasTexture | undefined>(undefined)
-  if (!texRef.current) texRef.current = createMarbleTexture()
+  const [texture] = useState(createMarbleTexture)
 
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
       <planeGeometry args={[40, 40]} />
-      <meshStandardMaterial map={texRef.current} roughness={0.4} metalness={0.15} />
+      <meshStandardMaterial map={texture} roughness={0.4} metalness={0.15} />
     </mesh>
   )
 }
@@ -92,7 +91,10 @@ const MarbleFloor = () => {
 const Scene = ({ game, focusedPlayerId }: SpectatorSceneProps) => {
   const cameraRef = useRef<CameraControls>(null)
   const gameRef = useRef(game)
-  gameRef.current = game
+
+  useEffect(() => {
+    gameRef.current = game
+  }, [game])
 
   useEffect(() => {
     const controls = cameraRef.current

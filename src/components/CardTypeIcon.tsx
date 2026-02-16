@@ -21,6 +21,7 @@ type CardTypeIconProps = {
 }
 
 const CardTypeIcon = ({ type, size = 18 }: CardTypeIconProps) => (
+  // eslint-disable-next-line @next/next/no-img-element -- small static SVG icons don't benefit from next/image optimization
   <img src={`/types/${typeFile[type]}.svg`} alt={type} title={type} width={size} height={size} />
 )
 

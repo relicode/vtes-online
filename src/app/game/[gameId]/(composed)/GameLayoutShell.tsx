@@ -34,11 +34,11 @@ const CollapsibleHeader = ({ label, collapsed, onToggle, direction = 'vertical',
   const isHorizontal = direction === 'horizontal'
   const Icon = isHorizontal
     ? collapsed
-      ? ChevronLeftIcon
-      : ChevronRightIcon
+      ? ChevronRightIcon
+      : ChevronLeftIcon
     : collapsed
-      ? ExpandMoreIcon
-      : ExpandLessIcon
+      ? ExpandLessIcon
+      : ExpandMoreIcon
 
   return (
     <Box

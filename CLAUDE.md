@@ -61,18 +61,20 @@ Game actions use a discriminated union (`GameAction` in `src/types/game-actions.
 
 ### Game route — parallel routes
 
-The game page (`/game/[gameId]`) uses Next.js parallel routes to render three independent slots in a single layout:
+The game page (`/game/[gameId]`) uses a `(composed)` route group with Next.js parallel routes to render three independent slots in a single layout:
 
-- `@public` — public game board (spectator view, visible to all)
+- `@public` — public game board (spectator view, visible to all). Append `?gfx=3d` for a 3D tabletop perspective.
 - `@player` — player-specific hand and controls (renders `null` for spectators at `/game/[gameId]`)
 - `@log` — action log
 
 The layout (`GameLayoutShell.tsx`) arranges these slots responsively. Each slot has both `/game/[gameId]/page.tsx` (spectator) and `/game/[gameId]/[userId]/page.tsx` (player) variants with matching `default.tsx` files.
 
-There is also a standalone 3D spectator view at `/game-3d/[gameId]` using Three.js (`@react-three/fiber` + `@react-three/drei`).
+Each panel is also available as a standalone page outside the composed layout (e.g. `/game/[gameId]/log`, `/game/[gameId]/[userId]/standalone`).
 
 ### Redis key patterns
 
+- `games` — set of all game IDs
+- `users` — set of all user IDs
 - `game:{gameId}` — JSON-serialized `GameState`
 - `game:{gameId}:log` — capped list of `ActionLogEntry` JSON (200 entries, newest first via `LPUSH`)
 - `game:{gameId}:players` — set of player IDs

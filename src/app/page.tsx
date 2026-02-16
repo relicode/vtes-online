@@ -63,7 +63,12 @@ const Home = async () => {
                     <Typography sx={labelSx}>Play</Typography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                       {game.players.map((p) => (
-                        <VtesLink key={p.playerId} href={`/game/${game.id}/${p.playerId}`} underline="hover" variant="body2">
+                        <VtesLink
+                          key={p.playerId}
+                          href={`/game/${game.id}/${p.playerId}`}
+                          underline="hover"
+                          variant="body2"
+                        >
                           {p.name}
                         </VtesLink>
                       ))}

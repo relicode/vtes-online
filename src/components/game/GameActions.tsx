@@ -1,6 +1,5 @@
 'use client'
 
-import DeleteIcon from '@mui/icons-material/Delete'
 import ImageIcon from '@mui/icons-material/Image'
 import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
@@ -22,9 +21,7 @@ type GameActionsProps = {
   cryptSize: number
   pool: number
   showImages: boolean
-  selectedInPlayCount: number
   onToggleImages: () => void
-  onTrash: () => void
 }
 
 const phases: TurnPhase[] = ['unlock', 'master', 'minion', 'influence', 'discard']
@@ -50,9 +47,7 @@ const GameActions = ({
   cryptSize,
   pool,
   showImages,
-  selectedInPlayCount,
   onToggleImages,
-  onTrash,
 }: GameActionsProps) => {
   const confirm = useConfirm()
   const act = (action: Parameters<typeof performGameAction>[2]) => performGameAction(gameId, playerId, action)
@@ -101,13 +96,6 @@ const GameActions = ({
           +
         </IconButton>
       </Stack>
-      <Tooltip title="Move to ash heap">
-        <span>
-          <IconButton size="small" disabled={selectedInPlayCount === 0} onClick={onTrash} color="error">
-            <DeleteIcon />
-          </IconButton>
-        </span>
-      </Tooltip>
       <Button
         variant="outlined"
         size="small"

@@ -8,8 +8,8 @@ type GameLayoutProps = {
   log: ReactNode
 }
 
-const GameLayout = ({ public: publicSlot, player, log }: GameLayoutProps) => {
-  return <GameLayoutShell public={publicSlot} player={player} log={log} />
-}
+const GameLayout = ({ public: publicSlot, player, log }: GameLayoutProps) => (
+  <GameLayoutShell public={publicSlot} player={player} log={log} />
+)
 
 export default GameLayout

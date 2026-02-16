@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useState } from 'react'
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace } from 'three'
 
 const TABLE_RADIUS = 3
@@ -49,20 +49,19 @@ const createWoodTexture = () => {
 }
 
 const TableMesh = () => {
-  const woodTexRef = useRef<CanvasTexture | undefined>(undefined)
-  if (!woodTexRef.current) woodTexRef.current = createWoodTexture()
+  const [texture] = useState(createWoodTexture)
 
   return (
     <group>
       {/* Dark oak table body */}
       <mesh position={[0, TABLE_HEIGHT / 2, 0]}>
         <cylinderGeometry args={[TABLE_RADIUS, TABLE_RADIUS, TABLE_HEIGHT, 64]} />
-        <meshStandardMaterial map={woodTexRef.current} roughness={0.8} metalness={0.05} />
+        <meshStandardMaterial map={texture} roughness={0.8} metalness={0.05} />
       </mesh>
       {/* Raised oak edge */}
       <mesh position={[0, TABLE_HEIGHT + 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <torusGeometry args={[TABLE_RADIUS, 0.06, 16, 64]} />
-        <meshStandardMaterial map={woodTexRef.current} roughness={0.7} metalness={0.05} color="#1e1008" />
+        <meshStandardMaterial map={texture} roughness={0.7} metalness={0.05} color="#1e1008" />
       </mesh>
     </group>
   )
