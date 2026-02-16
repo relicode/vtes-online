@@ -2,6 +2,9 @@
   "name": "vtes-online",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
+  "author": "Anssi Siren <pro@avaruus.mozmail.com>",
+  "keywords": ["vtes", "vampire", "card-game", "multiplayer", "nextjs", "redis"],
   "scripts": {
     "build": "next build",
     "dev": "next dev",
