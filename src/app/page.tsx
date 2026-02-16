@@ -12,6 +12,8 @@ import { listGames } from '$/actions/game-actions'
 import { listUsers } from '$/actions/user-actions'
 import VtesLink from '$/components/VtesLink'
 
+export const dynamic = 'force-dynamic'
+
 const labelSx = { width: 80, flexShrink: 0, fontWeight: 'bold', fontSize: '0.75rem', color: 'text.secondary' } as const
 
 const Home = async () => {

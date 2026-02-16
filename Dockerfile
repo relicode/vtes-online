@@ -2,6 +2,10 @@ FROM node:24-alpine AS base
 
 # --- deps ---
 FROM base AS deps
+
+ARG NPM_CONFIG_REGISTRY
+ENV NPM_CONFIG_REGISTRY=${NPM_CONFIG_REGISTRY}
+
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci

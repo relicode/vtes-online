@@ -13,7 +13,12 @@ services:
       retries: 5
 
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NPM_CONFIG_REGISTRY=${NPM_CONFIG_REGISTRY:-https://verdaccio.moisad.info}
+
     restart: unless-stopped
     profiles: [app]
     ports:
