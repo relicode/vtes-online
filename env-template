@@ -1,0 +1,6 @@
+# Copy to .env.local
+
+REDIS_URL=redis://localhost:6379
+# NPM_CONFIG_REGISTRY=https://verdaccio.moisad.info/'
+
+# vi: filetype=sh sw=2 ts=2 et
