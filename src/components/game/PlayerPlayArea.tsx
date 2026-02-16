@@ -5,6 +5,7 @@ import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
 import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
+import Divider from '@mui/material/Divider'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
@@ -17,6 +18,7 @@ import { useState } from 'react'
 import { performGameAction } from '$/actions/game-actions'
 import { getCardById } from '$/data/cards'
 import type { GameView } from '$/types/game'
+import ActionBar from './ActionBar'
 import CardRow from './CardRow'
 import CryptCard from './CryptCard'
 import GameActions from './GameActions'
@@ -32,6 +34,7 @@ type PlayerPlayAreaProps = {
 const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => {
   const confirm = useConfirm()
   const [selectedInPlay, setSelectedInPlay] = useState<Set<string>>(new Set())
+  const [selectedHand, setSelectedHand] = useState<Set<number>>(new Set())
   const [showImages, setShowImages] = useState(false)
   const [targetPickerFor, setTargetPickerFor] = useState<string | undefined>()
   const [longPressCard, setLongPressCard] = useState<string | undefined>()
@@ -93,7 +96,7 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
 
   const longPressCardData = longPressCard
     ? [...gameView.self.controlledCrypt, ...gameView.self.libraryCardsInPlay].find(
-        (c) => c.instanceId === longPressCard,
+        (c) => c.instanceId === longPressCard
       )
     : undefined
   const longPressCardName = longPressCardData ? (getCardById(longPressCardData.cardId)?.name ?? 'Unknown') : 'Unknown'
@@ -109,7 +112,11 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
     type TargetEntry = { instanceId: string; cardName: string; playerName: string }
     const groups: { playerName: string; cards: TargetEntry[] }[] = []
 
-    const addPlayer = (name: string, controlled: typeof gameView.self.controlledCrypt, library: typeof gameView.self.libraryCardsInPlay) => {
+    const addPlayer = (
+      name: string,
+      controlled: typeof gameView.self.controlledCrypt,
+      library: typeof gameView.self.libraryCardsInPlay
+    ) => {
       const cards: TargetEntry[] = []
       for (const c of controlled) {
         cards.push({ instanceId: c.instanceId, cardName: getCardById(c.cardId)?.name ?? 'Unknown', playerName: name })
@@ -152,12 +159,25 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
     return target ? (getCardById(target.cardId)?.name ?? 'Unknown') : undefined
   }
 
-  const handlePlayFromHand = (indices: number[]) => {
-    performGameAction(gameId, playerId, { type: 'playFromHand', indices })
+  const toggleHandCard = (index: number) => {
+    setSelectedHand((prev) => {
+      const next = new Set(prev)
+      if (next.has(index)) {
+        next.delete(index)
+      } else {
+        next.add(index)
+      }
+      return next
+    })
+  }
+
+  const handlePlayFromHand = () => {
+    performGameAction(gameId, playerId, { type: 'playFromHand', indices: [...selectedHand].sort() })
+    setSelectedHand(new Set())
   }
 
   return (
-    <>
+    <Stack sx={{ flex: 1, minHeight: 0 }}>
       <GameActions
         gameId={gameId}
         playerId={playerId}
@@ -171,8 +191,8 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
         onTrash={handleTrash}
       />
 
-      <Stack spacing={4} sx={{ p: 2 }}>
-        <CardRow title="Cards in Play">
+      <Stack spacing={4} sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: 2 }}>
+        <CardRow title="In play">
           {gameView.self.libraryCardsInPlay.length === 0 && gameView.self.controlledCrypt.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
               No cards in play.
@@ -214,10 +234,7 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
         </CardRow>
 
         {gameView.self.uncontrolledCrypt.length > 0 && (
-          <CardRow
-            title="Uncontrolled"
-            sx={{ border: '1px dashed', borderColor: 'warning.main', borderRadius: 1, p: 4, paddingTop: 2 }}
-          >
+          <CardRow sx={{ border: '1px dashed', borderColor: 'warning.main', borderRadius: 1, p: 4, paddingTop: 2 }}>
             {gameView.self.uncontrolledCrypt.map((u) => (
               <CryptCard
                 key={u.instanceId}
@@ -232,8 +249,21 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
           </CardRow>
         )}
 
-        <PlayerHand hand={gameView.self.hand} showImages={showImages} onPlay={handlePlayFromHand} />
+        <Divider />
+
+        <PlayerHand
+          hand={gameView.self.hand}
+          showImages={showImages}
+          selectedHand={selectedHand}
+          onToggleHandCard={toggleHandCard}
+        />
       </Stack>
+
+      <ActionBar>
+        <Button variant="contained" size="small" disabled={selectedHand.size === 0} onClick={handlePlayFromHand}>
+          Play ({selectedHand.size})
+        </Button>
+      </ActionBar>
 
       <Dialog open={longPressCard !== undefined} onClose={() => setLongPressCard(undefined)} fullWidth maxWidth="xs">
         <DialogTitle>{longPressCardName}</DialogTitle>
@@ -259,13 +289,18 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
         </DialogContent>
       </Dialog>
 
-      <Dialog open={targetPickerFor !== undefined} onClose={() => setTargetPickerFor(undefined)} fullWidth maxWidth="xs">
+      <Dialog
+        open={targetPickerFor !== undefined}
+        onClose={() => setTargetPickerFor(undefined)}
+        fullWidth
+        maxWidth="xs"
+      >
         <DialogTitle>Select Target</DialogTitle>
         <DialogContent>
           {(() => {
             const sourceCard = targetPickerFor
               ? [...gameView.self.controlledCrypt, ...gameView.self.libraryCardsInPlay].find(
-                  (c) => c.instanceId === targetPickerFor,
+                  (c) => c.instanceId === targetPickerFor
                 )
               : undefined
             const hasTarget = sourceCard?.target !== undefined
@@ -296,7 +331,7 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
           })()}
         </DialogContent>
       </Dialog>
-    </>
+    </Stack>
   )
 }
 

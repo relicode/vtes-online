@@ -8,13 +8,13 @@ import ViewInArIcon from '@mui/icons-material/ViewInAr'
 import Box from '@mui/material/Box'
 import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
+import { useTheme } from '@mui/material/styles'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import useMediaQuery from '@mui/material/useMediaQuery'
-import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { useParams, usePathname, useSearchParams } from 'next/navigation'
-import { type ReactNode, useState } from 'react'
+import { useState, type ReactNode } from 'react'
 
 type GameLayoutShellProps = {
   public: ReactNode
@@ -75,7 +75,12 @@ const GfxToggle = () => {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const is3d = searchParams.get('gfx') === '3d'
-  const href = is3d ? pathname : `${pathname}?gfx=3d`
+
+  const nextParams = new URLSearchParams(searchParams)
+  if (is3d) nextParams.delete('gfx')
+  else nextParams.set('gfx', '3d')
+  const qs = nextParams.toString()
+  const href = qs ? `${pathname}?${qs}` : pathname
 
   return (
     <Tooltip title={is3d ? 'Switch to 2D view' : 'Switch to 3D view'}>
@@ -106,11 +111,34 @@ const GameLayoutShell = ({ public: publicSlot, player, log }: GameLayoutShellPro
 
   if (isPlayerView) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: isWide ? 'row' : 'column', flex: 1, overflow: isWide ? 'hidden' : 'auto' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: isWide ? 'row' : 'column',
+          flex: 1,
+          overflow: isWide ? 'hidden' : 'auto',
+        }}
+      >
         {isWide ? (
           <>
-            <Box sx={{ flex: publicCollapsed && logCollapsed ? '0 0 auto' : '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <Box sx={{ flex: publicCollapsed ? '0 0 auto' : 2, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Box
+              sx={{
+                flex: publicCollapsed && logCollapsed ? '0 0 auto' : '1 1 0',
+                minWidth: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+            >
+              <Box
+                sx={{
+                  flex: publicCollapsed ? '0 0 auto' : 2,
+                  minHeight: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                }}
+              >
                 <CollapsibleHeader
                   label="Game"
                   collapsed={publicCollapsed}
@@ -137,7 +165,15 @@ const GameLayoutShell = ({ public: publicSlot, player, log }: GameLayoutShellPro
             <Divider orientation="vertical" flexItem />
           </>
         ) : null}
-        <Box sx={{ flex: '1 1 0', minWidth: 0, overflow: isWide ? 'auto' : undefined }}>
+        <Box
+          sx={{
+            flex: '1 1 0',
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: isWide ? 'hidden' : undefined,
+          }}
+        >
           {player}
         </Box>
         {!isWide && (
@@ -167,7 +203,15 @@ const GameLayoutShell = ({ public: publicSlot, player, log }: GameLayoutShellPro
 
   return (
     <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-      <Box sx={{ flex: publicCollapsed ? '0 0 auto' : '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <Box
+        sx={{
+          flex: publicCollapsed ? '0 0 auto' : '1 1 0',
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
+      >
         <CollapsibleHeader
           label="Game"
           collapsed={publicCollapsed}

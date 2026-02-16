@@ -1,21 +1,20 @@
-import Box, { BoxProps } from '@mui/material/Box'
+import Box, { type BoxProps } from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import type { ReactNode } from 'react'
 
 type CardRowProps = BoxProps & {
-  title: string
-  actions?: React.ReactNode
+  title?: ReactNode
 }
 
-const CardRow = ({ title, actions, children, ...rest }: CardRowProps) => (
+const CardRow = ({ title, children, ...rest }: CardRowProps) => (
   <Box {...rest}>
-    <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ mb: 1 }}>
-      <Typography variant="h5" textAlign="center">
+    {title && (
+      <Typography variant="h5" textAlign="center" sx={{ mb: 1 }}>
         {title}
       </Typography>
-      {actions}
-    </Stack>
-    <Stack direction="row" spacing={3} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
+    )}
+    <Stack direction="row" spacing={3} sx={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
       {children}
     </Stack>
   </Box>

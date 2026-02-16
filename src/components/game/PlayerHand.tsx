@@ -3,7 +3,6 @@
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import Badge from '@mui/material/Badge'
 import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import Collapse from '@mui/material/Collapse'
 import IconButton from '@mui/material/IconButton'
@@ -21,11 +20,11 @@ import CardRow from './CardRow'
 type PlayerHandProps = {
   hand: string[]
   showImages?: boolean
-  onPlay?: (indices: number[]) => void
+  selectedHand: Set<number>
+  onToggleHandCard: (index: number) => void
 }
 
-const PlayerHand = ({ hand, showImages, onPlay }: PlayerHandProps) => {
-  const [selected, setSelected] = useState<Set<number>>(new Set())
+const PlayerHand = ({ hand, showImages, selectedHand: selected, onToggleHandCard: toggle }: PlayerHandProps) => {
   const [expandedHand, setExpandedHand] = useState<Set<number>>(new Set())
 
   const toggleExpanded = (index: number) => {
@@ -40,32 +39,8 @@ const PlayerHand = ({ hand, showImages, onPlay }: PlayerHandProps) => {
     })
   }
 
-  const toggle = (index: number) => {
-    setSelected((prev) => {
-      const next = new Set(prev)
-      if (next.has(index)) {
-        next.delete(index)
-      } else {
-        next.add(index)
-      }
-      return next
-    })
-  }
-
-  const handlePlay = () => {
-    onPlay?.([...selected].sort())
-    setSelected(new Set())
-  }
-
   return (
-    <CardRow
-      title={`Hand (${hand.length})`}
-      actions={
-        <Button variant="contained" size="small" disabled={selected.size === 0} onClick={handlePlay}>
-          Play ({selected.size})
-        </Button>
-      }
-    >
+    <CardRow title={`Hand (${hand.length})`}>
       {hand.length === 0 ? (
         <Typography variant="body2" color="text.secondary">
           No cards in hand.
@@ -74,7 +49,11 @@ const PlayerHand = ({ hand, showImages, onPlay }: PlayerHandProps) => {
         hand.map((cardId, index) => {
           const card = getCardById(cardId)
           const isSelected = selected.has(index)
-          const badgeBorderColor = isSelected ? 'primary.main' : card?.type === 'crypt' ? 'warning.main' : 'success.main'
+          const badgeBorderColor = isSelected
+            ? 'primary.main'
+            : card?.type === 'crypt'
+              ? 'warning.main'
+              : 'success.main'
           return (
             <Tooltip
               key={`${cardId}-${index}`}
