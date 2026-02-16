@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VTES Online
 
-## Getting Started
+A web-based implementation of Vampire: The Eternal Struggle (VTES), the classic multiplayer card game. Players build decks, join games, and play in real time through their browser.
 
-First, run the development server:
+## Getting started
+
+You need Node.js 18+ and Docker.
 
 ```bash
+# Start Redis
+docker compose up -d redis
+
+# Install dependencies
+npm install
+
+# Seed the database with sample game data
+npm run seed
+
+# Start the dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to play.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To reset all game data and re-seed from scratch:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run seed:flush
+```
 
-## Learn More
+## How it works
 
-To learn more about Next.js, take a look at the following resources:
+The game runs entirely on Redis — there is no SQL database. All game state lives in Redis as JSON, and real-time updates are pushed to players via Server-Sent Events (SSE) backed by Redis Pub/Sub.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+When a player takes an action (draw a card, lock a minion, advance the turn phase, etc.), here's what happens:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. The client sends the action to the server via a Next.js Server Action
+2. The server clones the current game state, applies the mutation, and writes it back to Redis along with a log entry
+3. Redis Pub/Sub notifies all connected clients via SSE
+4. Each client receives an updated view of the game tailored to their perspective — opponents' hands and uncontrolled crypt cards stay hidden
 
-## Deploy on Vercel
+If the SSE connection drops, the client automatically falls back to polling.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Game views
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The game page uses three parallel panels rendered simultaneously:
+
+- **Game board** — the public view showing all players' controlled minions, pool, and visible cards
+- **Player hand** — your private hand and game controls (only visible to you)
+- **Action log** — a scrolling feed of what's happened in the game
+
+There is also an experimental 3D spectator view at `/game-3d/[gameId]` for watching games from a virtual tabletop perspective.
+
+## Tech stack
+
+- **Next.js 16** (App Router) with **React 19**
+- **MUI Material v7** for the UI
+- **Redis** (ioredis) for all data storage and real-time messaging
+- **React Compiler** for automatic memoization
+- **Three.js** (react-three-fiber) for the 3D spectator view
+
+## Production deployment
+
+```bash
+docker compose --profile app up
+```
+
+This builds the Next.js standalone container and runs it alongside Redis. The app listens on port 3000.
+
+## Scripts
+
+| Command                   | Description                |
+| ------------------------- | -------------------------- |
+| `npm run dev`             | Start dev server           |
+| `npm run build`           | Production build           |
+| `npm run lint`            | Run ESLint                 |
+| `npm run lint:prettier`   | Check Prettier formatting  |
+| `npm run lint:typescript` | TypeScript type check      |
+| `npm run format`          | Auto-fix ESLint + Prettier |
+| `npm run seed`            | Seed Redis with test data  |
+| `npm run seed:flush`      | Flush Redis and re-seed    |
