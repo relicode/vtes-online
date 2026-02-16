@@ -3,7 +3,7 @@
 import { toGameSummary, toGameView } from '$/lib/game-views'
 import redis from '$/lib/redis'
 import type { ActionResult } from '$/types/actions'
-import type { GameState, GameSummary, GameView, PlayerState } from '$/types/game'
+import type { GameListItem, GameState, GameSummary, GameView, PlayerState } from '$/types/game'
 import type { ActionLogEntry, GameAction } from '$/types/game-actions'
 import { applyGameAction } from './game-action-handlers'
 
@@ -31,6 +31,29 @@ const createEmptyPlayer = (playerId: string, name: string): PlayerState => ({
 // ---------------------------------------------------------------------------
 // Actions
 // ---------------------------------------------------------------------------
+
+const listGames = async (): Promise<ActionResult<GameListItem[]>> => {
+  const gameIds = await redis.smembers('games')
+  if (gameIds.length === 0) return { success: true, data: [] }
+
+  const pipeline = redis.pipeline()
+  for (const id of gameIds) pipeline.get(`game:${id}`)
+  const results = await pipeline.exec()
+
+  const items: GameListItem[] = []
+  for (const [err, raw] of results ?? []) {
+    if (err || !raw) continue
+    const game = JSON.parse(raw as string) as GameState
+    items.push({
+      id: game.id,
+      name: game.name,
+      status: game.status,
+      players: game.playerOrder.map((pid) => ({ playerId: pid, name: game.players[pid].name })),
+    })
+  }
+
+  return { success: true, data: items }
+}
 
 const getGame = async (gameId: string): Promise<ActionResult<GameSummary>> => {
   const [raw, logEntries] = await Promise.all([redis.get(`game:${gameId}`), redis.lrange(`game:${gameId}:log`, 0, 49)])
@@ -77,6 +100,7 @@ const createGame = async (
     .pipeline()
     .set(`game:${gameId}`, JSON.stringify(game))
     .sadd(`game:${gameId}:players`, creatorUserId)
+    .sadd('games', gameId)
     .exec()
 
   return { success: true, data: toGameSummary(game, []) }
@@ -175,4 +199,4 @@ const getActionLog = async (gameId: string): Promise<ActionResult<ActionLogEntry
   return { success: true, data: entries.map((entry) => JSON.parse(entry) as ActionLogEntry) }
 }
 
-export { createGame, getActionLog, getGame, getGameView, joinGame, performGameAction }
+export { createGame, getActionLog, getGame, getGameView, joinGame, listGames, performGameAction }

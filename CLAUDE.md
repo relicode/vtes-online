@@ -91,6 +91,7 @@ There is also a standalone 3D spectator view at `/game-3d/[gameId]` using Three.
 - **No semicolons**, single quotes, 120 char print width, es5 trailing commas
 - **Import order** (enforced by prettier plugin): third-party → blank line → `$/` aliased → relative
 - **`'use server'` files can only export functions** — `export type` causes Turbopack build errors. Keep shared types in `src/types/` and import them into action files.
+- **Use `<Stack>` instead of `<Box sx={{ display: 'flex', flexDirection: 'column' }}>`** — MUI Stack is the semantic equivalent and keeps markup concise. Only use Box for flex columns when you need conditional `flexDirection` or other non-trivial dynamic props.
 
 ## MCP servers
 

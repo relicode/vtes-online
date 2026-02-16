@@ -14,7 +14,6 @@ import { useEffect } from 'react'
 import { getCardById } from '$/data/cards'
 import type { GameSummary } from '$/types/game'
 import useGameEventStream from './GameEventStream'
-import { useView3d } from './View3dContext'
 
 const SpectatorScene = dynamic(() => import('./spectator3d/SpectatorScene'), {
   ssr: false,
@@ -28,11 +27,12 @@ const SpectatorScene = dynamic(() => import('./spectator3d/SpectatorScene'), {
 type PublicGameContentProps = {
   gameId: string
   initialState: GameSummary
+  gfx?: string
 }
 
-const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => {
+const PublicGameContent = ({ gameId, initialState, gfx = '2d' }: PublicGameContentProps) => {
   const game = useGameEventStream({ gameId, initialState })
-  const { view3d } = useView3d()
+  const view3d = gfx === '3d'
 
   useEffect(() => {
     document.title = game.name
@@ -58,7 +58,7 @@ const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => 
   } as const
 
   return (
-    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Stack spacing={2} sx={{ p: 2 }}>
       <Stack direction="row" spacing={1} alignItems="center">
         <Chip label={game.status} color={game.status === 'active' ? 'success' : 'default'} />
         <Chip label={`Round ${game.round} / Turn ${game.turnCount}`} variant="outlined" />
@@ -217,7 +217,7 @@ const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => 
           </Paper>
         ))}
       </Stack>
-    </Box>
+    </Stack>
   )
 }
 

@@ -1,15 +1,8 @@
+import Stack from '@mui/material/Stack'
 import type { ReactNode } from 'react'
 
-import GameLayoutShell from './GameLayoutShell'
-
-type GameLayoutProps = {
-  public: ReactNode
-  player: ReactNode
-  log: ReactNode
-}
-
-const GameLayout = ({ public: publicSlot, player, log }: GameLayoutProps) => {
-  return <GameLayoutShell public={publicSlot} player={player} log={log} />
-}
+const GameLayout = ({ children }: { children: ReactNode }) => (
+  <Stack sx={{ flex: 1, minHeight: 0 }}>{children}</Stack>
+)
 
 export default GameLayout
