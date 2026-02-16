@@ -86,7 +86,7 @@ const CardPicker = ({ onAddCard }: CardPickerProps) => {
   })
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+    <Stack sx={{ flex: 1, minHeight: 0 }}>
       <Typography variant="h6" sx={{ mb: 1 }}>
         Add Cards
       </Typography>
@@ -229,7 +229,7 @@ const CardPicker = ({ onAddCard }: CardPickerProps) => {
         )}
       </List>
       <CardPreviewModal imageUrl={previewUrl} onClose={() => setPreviewUrl(undefined)} />
-    </Box>
+    </Stack>
   )
 }
 

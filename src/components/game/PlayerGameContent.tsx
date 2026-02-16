@@ -1,8 +1,8 @@
 'use client'
 
 import type { GameView } from '$/types/game'
-import PlayerPlayArea from './PlayerPlayArea'
 import useGameEventStream from './GameEventStream'
+import PlayerPlayArea from './PlayerPlayArea'
 
 type PlayerGameContentProps = {
   gameId: string
@@ -13,9 +13,7 @@ type PlayerGameContentProps = {
 const PlayerGameContent = ({ gameId, playerId, initialState }: PlayerGameContentProps) => {
   const gameView = useGameEventStream({ gameId, userId: playerId, initialState })
 
-  return (
-    <PlayerPlayArea gameView={gameView} gameId={gameId} playerId={playerId} />
-  )
+  return <PlayerPlayArea gameView={gameView} gameId={gameId} playerId={playerId} />
 }
 
 export default PlayerGameContent

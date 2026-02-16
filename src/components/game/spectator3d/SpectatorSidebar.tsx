@@ -17,7 +17,7 @@ type SpectatorSidebarProps = {
 }
 
 const SpectatorSidebar = ({ game, focusedPlayerId, onFocusPlayer }: SpectatorSidebarProps) => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+  <Stack sx={{ height: '100%', overflow: 'hidden' }}>
     {/* Game status */}
     <Box sx={{ p: 2, pb: 1 }}>
       <Typography variant="h6" sx={{ mb: 1 }}>
@@ -62,7 +62,7 @@ const SpectatorSidebar = ({ game, focusedPlayerId, onFocusPlayer }: SpectatorSid
     <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', px: 2, pb: 2 }}>
       <ActionLog entries={game.actionLog} />
     </Box>
-  </Box>
+  </Stack>
 )
 
 export default SpectatorSidebar

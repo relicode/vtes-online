@@ -45,11 +45,11 @@ If the SSE connection drops, the client automatically falls back to polling.
 
 The game page uses three parallel panels rendered simultaneously:
 
-- **Game board** — the public view showing all players' controlled minions, pool, and visible cards
+- **Game board** — the public view showing all players' controlled minions, pool, and visible cards. Append `?gfx=3d` for a 3D tabletop perspective.
 - **Player hand** — your private hand and game controls (only visible to you)
 - **Action log** — a scrolling feed of what's happened in the game
 
-There is also an experimental 3D spectator view at `/game-3d/[gameId]` for watching games from a virtual tabletop perspective.
+Each panel is also available as a standalone page (e.g. `/game/[gameId]/log`).
 
 ## Tech stack
 
@@ -58,6 +58,11 @@ There is also an experimental 3D spectator view at `/game-3d/[gameId]` for watch
 - **Redis** (ioredis) for all data storage and real-time messaging
 - **React Compiler** for automatic memoization
 - **Three.js** (react-three-fiber) for the 3D spectator view
+
+## Conventions
+
+- **MUI imports**: use individual paths (`import Button from '@mui/material/Button'`), never destructured barrel imports
+- **Use `<Stack>` instead of `<Box sx={{ display: 'flex', flexDirection: 'column' }}>`** — Stack is the semantic equivalent and keeps markup concise. Only use Box for flex columns when you need conditional `flexDirection` or other dynamic props.
 
 ## Production deployment
 

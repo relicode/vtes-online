@@ -4,7 +4,6 @@ import AddIcon from '@mui/icons-material/Add'
 import RemoveIcon from '@mui/icons-material/Remove'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import Badge from '@mui/material/Badge'
-import Box from '@mui/material/Box'
 import IconButton from '@mui/material/IconButton'
 import List from '@mui/material/List'
 import ListItem from '@mui/material/ListItem'
@@ -68,7 +67,7 @@ const DeckList = ({ title, entries, onRemove, onUpdateCount }: DeckListProps) =>
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+    <Stack sx={{ flex: 1, minHeight: 0 }}>
       <Typography variant="h6" sx={{ mb: 1 }}>
         {title} ({totalCards}){avgCapacity > 0 && ` ~${avgCapacity.toFixed(1)}`}
       </Typography>
@@ -140,7 +139,7 @@ const DeckList = ({ title, entries, onRemove, onUpdateCount }: DeckListProps) =>
         </List>
       )}
       <CardPreviewModal imageUrl={previewUrl} onClose={() => setPreviewUrl(undefined)} />
-    </Box>
+    </Stack>
   )
 }
 

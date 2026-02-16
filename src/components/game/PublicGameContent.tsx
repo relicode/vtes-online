@@ -14,7 +14,6 @@ import { useEffect } from 'react'
 import { getCardById } from '$/data/cards'
 import type { GameSummary } from '$/types/game'
 import useGameEventStream from './GameEventStream'
-import { useView3d } from './View3dContext'
 
 const SpectatorScene = dynamic(() => import('./spectator3d/SpectatorScene'), {
   ssr: false,
@@ -28,11 +27,12 @@ const SpectatorScene = dynamic(() => import('./spectator3d/SpectatorScene'), {
 type PublicGameContentProps = {
   gameId: string
   initialState: GameSummary
+  gfx?: string
 }
 
-const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => {
+const PublicGameContent = ({ gameId, initialState, gfx = '2d' }: PublicGameContentProps) => {
   const game = useGameEventStream({ gameId, initialState })
-  const { view3d } = useView3d()
+  const view3d = gfx === '3d'
 
   useEffect(() => {
     document.title = game.name
@@ -48,8 +48,18 @@ const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => 
 
   // Global card data for cross-player targeting (sources shown in the target player's section)
   const allGlobalCards = game.players.flatMap((p) => [
-    ...p.controlledCrypt.map((c) => ({ instanceId: c.instanceId, target: c.target, card: getCardById(c.cardId), playerId: p.playerId })),
-    ...p.libraryCardsInPlay.map((c) => ({ instanceId: c.instanceId, target: c.target, card: getCardById(c.cardId), playerId: p.playerId })),
+    ...p.controlledCrypt.map((c) => ({
+      instanceId: c.instanceId,
+      target: c.target,
+      card: getCardById(c.cardId),
+      playerId: p.playerId,
+    })),
+    ...p.libraryCardsInPlay.map((c) => ({
+      instanceId: c.instanceId,
+      target: c.target,
+      card: getCardById(c.cardId),
+      playerId: p.playerId,
+    })),
   ])
   const globalInstanceIds = new Set(allGlobalCards.map((c) => c.instanceId))
 
@@ -58,7 +68,7 @@ const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => 
   } as const
 
   return (
-    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Stack spacing={2} sx={{ p: 2 }}>
       <Stack direction="row" spacing={1} alignItems="center">
         <Chip label={game.status} color={game.status === 'active' ? 'success' : 'default'} />
         <Chip label={`Round ${game.round} / Turn ${game.turnCount}`} variant="outlined" />
@@ -101,19 +111,16 @@ const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => 
 
               // Same-player sources: cards targeting another card in this player's area
               const sourceIds = new Set(
-                allCards.filter((c) => c.target && allInstanceIds.has(c.target)).map((c) => c.instanceId),
+                allCards.filter((c) => c.target && allInstanceIds.has(c.target)).map((c) => c.instanceId)
               )
 
               // Cross-player sources: cards from other players targeting this player's cards
               const foreignSources = allGlobalCards.filter(
-                (c) => c.playerId !== player.playerId && c.target && allInstanceIds.has(c.target),
+                (c) => c.playerId !== player.playerId && c.target && allInstanceIds.has(c.target)
               )
 
               // Build a flat source lookup: targetInstanceId → source cards (same-player + foreign)
-              const allSourceCards = [
-                ...allCards.filter((c) => sourceIds.has(c.instanceId)),
-                ...foreignSources,
-              ]
+              const allSourceCards = [...allCards.filter((c) => sourceIds.has(c.instanceId)), ...foreignSources]
               const sourcesByTarget = new Map<string, typeof allSourceCards>()
               for (const src of allSourceCards) {
                 const list = sourcesByTarget.get(src.target!)
@@ -135,7 +142,7 @@ const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => 
 
               return (
                 <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                  <Stack direction="row" spacing={0.5} useFlexGap sx={{ flexWrap: 'wrap', flex: 1 }}>
+                  <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', flex: 1 }}>
                     {groups.map(({ anchor, sources }) => {
                       const hasCrossTarget =
                         anchor.target && !allInstanceIds.has(anchor.target) && globalInstanceIds.has(anchor.target)
@@ -217,7 +224,7 @@ const PublicGameContent = ({ gameId, initialState }: PublicGameContentProps) => 
           </Paper>
         ))}
       </Stack>
-    </Box>
+    </Stack>
   )
 }
 

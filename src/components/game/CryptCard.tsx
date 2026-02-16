@@ -2,6 +2,7 @@
 
 import AddIcon from '@mui/icons-material/Add'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import GpsFixedIcon from '@mui/icons-material/GpsFixed'
 import LockIcon from '@mui/icons-material/Lock'
 import LockOpenIcon from '@mui/icons-material/LockOpen'
 import RemoveIcon from '@mui/icons-material/Remove'
@@ -21,8 +22,6 @@ import DisciplineIcon from '$/components/DisciplineIcon'
 import { getCardById } from '$/data/cards'
 import useLongPress from '$/hooks/useLongPress'
 import type { ControlledCryptCard, UncontrolledCryptCard } from '$/types/game'
-
-import GpsFixedIcon from '@mui/icons-material/GpsFixed'
 
 // ---------------------------------------------------------------------------
 // Shared base
@@ -194,7 +193,7 @@ const CryptCardBase = ({
               </Stack>
             )}
             {card?.type === 'crypt' && card.disciplines.length > 0 && (
-              <Stack direction="row" spacing={0.25} alignItems="center" useFlexGap sx={{ flexWrap: 'wrap', mt: 0.5 }}>
+              <Stack direction="row" spacing={0.25} alignItems="center" sx={{ flexWrap: 'wrap', mt: 0.5 }}>
                 {card.disciplines.map((d) => (
                   <DisciplineIcon key={d} discipline={d} size={18} />
                 ))}
@@ -235,8 +234,16 @@ const CryptCardBase = ({
   }
 
   const inner = (
-    <Badge badgeContent={bloodBadge} anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }} slotProps={bloodBadgeSlotProps}>
-      <Badge badgeContent={clanBadge} anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }} slotProps={badgeSlotProps}>
+    <Badge
+      badgeContent={bloodBadge}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      slotProps={bloodBadgeSlotProps}
+    >
+      <Badge
+        badgeContent={clanBadge}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        slotProps={badgeSlotProps}
+      >
         {cardContent}
       </Badge>
     </Badge>

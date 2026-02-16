@@ -8,14 +8,13 @@ import ViewInArIcon from '@mui/icons-material/ViewInAr'
 import Box from '@mui/material/Box'
 import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
+import { useTheme } from '@mui/material/styles'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import useMediaQuery from '@mui/material/useMediaQuery'
-import { useTheme } from '@mui/material/styles'
-import { useParams } from 'next/navigation'
-import { type ReactNode, useState } from 'react'
-
-import { useView3d, View3dProvider } from '$/components/game/View3dContext'
+import Link from 'next/link'
+import { useParams, usePathname, useSearchParams } from 'next/navigation'
+import { useState, type ReactNode } from 'react'
 
 type GameLayoutShellProps = {
   public: ReactNode
@@ -35,11 +34,11 @@ const CollapsibleHeader = ({ label, collapsed, onToggle, direction = 'vertical',
   const isHorizontal = direction === 'horizontal'
   const Icon = isHorizontal
     ? collapsed
-      ? ChevronLeftIcon
-      : ChevronRightIcon
+      ? ChevronRightIcon
+      : ChevronLeftIcon
     : collapsed
-      ? ExpandMoreIcon
-      : ExpandLessIcon
+      ? ExpandLessIcon
+      : ExpandMoreIcon
 
   return (
     <Box
@@ -72,17 +71,25 @@ const CollapsibleHeader = ({ label, collapsed, onToggle, direction = 'vertical',
   )
 }
 
-const View3dToggle = () => {
-  const { view3d, setView3d } = useView3d()
+const GfxToggle = () => {
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const is3d = searchParams.get('gfx') === '3d'
+
+  const nextParams = new URLSearchParams(searchParams)
+  if (is3d) nextParams.delete('gfx')
+  else nextParams.set('gfx', '3d')
+  const qs = nextParams.toString()
+  const href = qs ? `${pathname}?${qs}` : pathname
+
   return (
-    <Tooltip title={view3d ? 'Switch to 2D view' : 'Switch to 3D view'}>
+    <Tooltip title={is3d ? 'Switch to 2D view' : 'Switch to 3D view'}>
       <IconButton
         size="small"
-        onClick={(e) => {
-          e.stopPropagation()
-          setView3d(!view3d)
-        }}
-        color={view3d ? 'info' : 'default'}
+        component={Link}
+        href={href}
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        color={is3d ? 'info' : 'default'}
         sx={{ p: 0.25 }}
       >
         <ViewInArIcon sx={{ fontSize: 18 }} />
@@ -91,7 +98,7 @@ const View3dToggle = () => {
   )
 }
 
-const GameLayoutShellInner = ({ public: publicSlot, player, log }: GameLayoutShellProps) => {
+const GameLayoutShell = ({ public: publicSlot, player, log }: GameLayoutShellProps) => {
   const params = useParams<{ userId?: string }>()
   const isPlayerView = params.userId !== undefined
   const theme = useTheme()
@@ -100,22 +107,45 @@ const GameLayoutShellInner = ({ public: publicSlot, player, log }: GameLayoutShe
   const [publicCollapsed, setPublicCollapsed] = useState(false)
   const [logCollapsed, setLogCollapsed] = useState(false)
 
-  const view3dToggle = <View3dToggle />
+  const gfxToggle = <GfxToggle />
 
   if (isPlayerView) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: isWide ? 'row' : 'column', flex: 1, overflow: isWide ? 'hidden' : 'auto' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: isWide ? 'row' : 'column',
+          flex: 1,
+          overflow: isWide ? 'hidden' : 'auto',
+        }}
+      >
         {isWide ? (
           <>
-            <Box sx={{ flex: publicCollapsed && logCollapsed ? '0 0 auto' : '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <Box sx={{ flex: publicCollapsed ? '0 0 auto' : 2, minHeight: 0, overflow: 'auto' }}>
+            <Box
+              sx={{
+                flex: publicCollapsed && logCollapsed ? '0 0 auto' : '1 1 0',
+                minWidth: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+            >
+              <Box
+                sx={{
+                  flex: publicCollapsed ? '0 0 auto' : 2,
+                  minHeight: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                }}
+              >
                 <CollapsibleHeader
                   label="Game"
                   collapsed={publicCollapsed}
                   onToggle={() => setPublicCollapsed((prev) => !prev)}
-                  actions={view3dToggle}
+                  actions={gfxToggle}
                 />
-                {!publicCollapsed && publicSlot}
+                {!publicCollapsed && <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>{publicSlot}</Box>}
               </Box>
               <Box
                 sx={{
@@ -135,7 +165,15 @@ const GameLayoutShellInner = ({ public: publicSlot, player, log }: GameLayoutShe
             <Divider orientation="vertical" flexItem />
           </>
         ) : null}
-        <Box sx={{ flex: '1 1 0', minWidth: 0, overflow: isWide ? 'auto' : undefined }}>
+        <Box
+          sx={{
+            flex: '1 1 0',
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: isWide ? 'hidden' : undefined,
+          }}
+        >
           {player}
         </Box>
         {!isWide && (
@@ -153,7 +191,7 @@ const GameLayoutShellInner = ({ public: publicSlot, player, log }: GameLayoutShe
                 label="Game"
                 collapsed={publicCollapsed}
                 onToggle={() => setPublicCollapsed((prev) => !prev)}
-                actions={view3dToggle}
+                actions={gfxToggle}
               />
               {!publicCollapsed && publicSlot}
             </Box>
@@ -165,15 +203,23 @@ const GameLayoutShellInner = ({ public: publicSlot, player, log }: GameLayoutShe
 
   return (
     <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-      <Box sx={{ flex: publicCollapsed ? '0 0 auto' : '1 1 0', minWidth: 0, overflow: 'auto' }}>
+      <Box
+        sx={{
+          flex: publicCollapsed ? '0 0 auto' : '1 1 0',
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
+      >
         <CollapsibleHeader
           label="Game"
           collapsed={publicCollapsed}
           onToggle={() => setPublicCollapsed((prev) => !prev)}
           direction="horizontal"
-          actions={view3dToggle}
+          actions={gfxToggle}
         />
-        {!publicCollapsed && publicSlot}
+        {!publicCollapsed && <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>{publicSlot}</Box>}
       </Box>
       <Divider orientation="vertical" flexItem />
       <Box sx={{ flex: logCollapsed ? '0 0 auto' : '1 1 0', minWidth: 0, overflow: 'auto' }}>
@@ -188,11 +234,5 @@ const GameLayoutShellInner = ({ public: publicSlot, player, log }: GameLayoutShe
     </Box>
   )
 }
-
-const GameLayoutShell = (props: GameLayoutShellProps) => (
-  <View3dProvider>
-    <GameLayoutShellInner {...props} />
-  </View3dProvider>
-)
 
 export default GameLayoutShell

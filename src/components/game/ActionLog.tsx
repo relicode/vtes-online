@@ -3,8 +3,6 @@
 import List from '@mui/material/List'
 import ListItem from '@mui/material/ListItem'
 import ListItemText from '@mui/material/ListItemText'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
 
 import type { ActionLogEntry } from '$/types/game-actions'
 
@@ -18,25 +16,23 @@ const formatTime = (timestamp: string) => {
 }
 
 const ActionLog = ({ entries }: ActionLogProps) => (
-  <Paper variant="outlined">
-    <List dense disablePadding>
-      {entries.length === 0 ? (
-        <ListItem>
-          <ListItemText secondary="No actions yet." />
+  <List dense disablePadding>
+    {entries.length === 0 ? (
+      <ListItem>
+        <ListItemText secondary="No actions yet." />
+      </ListItem>
+    ) : (
+      entries.map((entry) => (
+        <ListItem key={entry.id}>
+          <ListItemText
+            primary={entry.description}
+            secondary={formatTime(entry.timestamp)}
+            slotProps={{ secondary: { variant: 'caption' } }}
+          />
         </ListItem>
-      ) : (
-        entries.map((entry) => (
-          <ListItem key={entry.id}>
-            <ListItemText
-              primary={entry.description}
-              secondary={formatTime(entry.timestamp)}
-              slotProps={{ secondary: { variant: 'caption' } }}
-            />
-          </ListItem>
-        ))
-      )}
-    </List>
-  </Paper>
+      ))
+    )}
+  </List>
 )
 
 export default ActionLog

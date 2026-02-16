@@ -4,12 +4,14 @@ import Typography from '@mui/material/Typography'
 import { getGame } from '$/actions/game-actions'
 import PublicGameContent from '$/components/game/PublicGameContent'
 
-type PublicPlayerGamePageProps = {
+type PublicGamePageProps = {
   params: Promise<{ gameId: string }>
+  searchParams: Promise<{ gfx?: string }>
 }
 
-const PublicPlayerGamePage = async ({ params }: PublicPlayerGamePageProps) => {
+const PublicGamePage = async ({ params, searchParams }: PublicGamePageProps) => {
   const { gameId } = await params
+  const { gfx } = await searchParams
 
   const result = await getGame(gameId)
   if (!result.success) {
@@ -20,7 +22,7 @@ const PublicPlayerGamePage = async ({ params }: PublicPlayerGamePageProps) => {
     )
   }
 
-  return <PublicGameContent gameId={gameId} initialState={result.data} />
+  return <PublicGameContent gameId={gameId} initialState={result.data} gfx={gfx} />
 }
 
-export default PublicPlayerGamePage
+export default PublicGamePage

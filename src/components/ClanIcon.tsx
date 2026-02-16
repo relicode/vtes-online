@@ -55,6 +55,7 @@ type ClanIconProps = {
 }
 
 const ClanIcon = ({ clan, size = 20 }: ClanIconProps) => (
+  // eslint-disable-next-line @next/next/no-img-element -- small static SVG icons don't benefit from next/image optimization
   <img src={`/clans/${clanFile[clan]}.svg`} alt={clan} title={clan} width={size} height={size} />
 )
 

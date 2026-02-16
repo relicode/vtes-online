@@ -213,6 +213,13 @@ type GameSummary = {
   actionLog: ActionLogEntry[]
 }
 
+type GameListItem = {
+  id: string
+  name: string
+  status: GameStatus
+  players: { playerId: string; name: string }[]
+}
+
 // ---------------------------------------------------------------------------
 // Exports
 // ---------------------------------------------------------------------------
@@ -225,6 +232,7 @@ export type {
   CombatState,
   CombatStep,
   ContestedCard,
+  GameListItem,
   GameState,
   GameStatus,
   GameSummary,

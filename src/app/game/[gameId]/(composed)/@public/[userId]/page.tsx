@@ -2,14 +2,16 @@ import Container from '@mui/material/Container'
 import Typography from '@mui/material/Typography'
 
 import { getGame } from '$/actions/game-actions'
-import Spectator3DContent from '$/components/game/spectator3d/Spectator3DContent'
+import PublicGameContent from '$/components/game/PublicGameContent'
 
-type Game3DPageProps = {
+type PublicPlayerGamePageProps = {
   params: Promise<{ gameId: string }>
+  searchParams: Promise<{ gfx?: string }>
 }
 
-const Game3DPage = async ({ params }: Game3DPageProps) => {
+const PublicPlayerGamePage = async ({ params, searchParams }: PublicPlayerGamePageProps) => {
   const { gameId } = await params
+  const { gfx } = await searchParams
 
   const result = await getGame(gameId)
   if (!result.success) {
@@ -20,7 +22,7 @@ const Game3DPage = async ({ params }: Game3DPageProps) => {
     )
   }
 
-  return <Spectator3DContent gameId={gameId} initialState={result.data} />
+  return <PublicGameContent gameId={gameId} initialState={result.data} gfx={gfx} />
 }
 
-export default Game3DPage
+export default PublicPlayerGamePage

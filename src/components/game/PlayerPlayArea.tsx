@@ -1,5 +1,11 @@
 'use client'
 
+import DeleteIcon from '@mui/icons-material/Delete'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
+import Accordion from '@mui/material/Accordion'
+import AccordionDetails from '@mui/material/AccordionDetails'
+import AccordionSummary from '@mui/material/AccordionSummary'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
@@ -17,11 +23,23 @@ import { useState } from 'react'
 import { performGameAction } from '$/actions/game-actions'
 import { getCardById } from '$/data/cards'
 import type { GameView } from '$/types/game'
-import CardRow from './CardRow'
+import ActionBar from './ActionBar'
+import CardTile from './CardTile'
 import CryptCard from './CryptCard'
 import GameActions from './GameActions'
 import LibraryCardInPlayComponent from './LibraryCardInPlay'
 import PlayerHand from './PlayerHand'
+
+const cardRowSx = { gap: 4, flexWrap: 'wrap', alignItems: 'flex-start' } as const
+
+const accordionSx = {
+  boxShadow: 'none',
+  border: 1,
+  borderColor: 'divider',
+  borderRadius: 1,
+  bgcolor: 'transparent',
+  '&:before': { display: 'none' },
+} as const
 
 type PlayerPlayAreaProps = {
   gameView: GameView
@@ -32,6 +50,7 @@ type PlayerPlayAreaProps = {
 const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => {
   const confirm = useConfirm()
   const [selectedInPlay, setSelectedInPlay] = useState<Set<string>>(new Set())
+  const [selectedHand, setSelectedHand] = useState<Set<number>>(new Set())
   const [showImages, setShowImages] = useState(false)
   const [targetPickerFor, setTargetPickerFor] = useState<string | undefined>()
   const [longPressCard, setLongPressCard] = useState<string | undefined>()
@@ -93,7 +112,7 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
 
   const longPressCardData = longPressCard
     ? [...gameView.self.controlledCrypt, ...gameView.self.libraryCardsInPlay].find(
-        (c) => c.instanceId === longPressCard,
+        (c) => c.instanceId === longPressCard
       )
     : undefined
   const longPressCardName = longPressCardData ? (getCardById(longPressCardData.cardId)?.name ?? 'Unknown') : 'Unknown'
@@ -109,7 +128,11 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
     type TargetEntry = { instanceId: string; cardName: string; playerName: string }
     const groups: { playerName: string; cards: TargetEntry[] }[] = []
 
-    const addPlayer = (name: string, controlled: typeof gameView.self.controlledCrypt, library: typeof gameView.self.libraryCardsInPlay) => {
+    const addPlayer = (
+      name: string,
+      controlled: typeof gameView.self.controlledCrypt,
+      library: typeof gameView.self.libraryCardsInPlay
+    ) => {
       const cards: TargetEntry[] = []
       for (const c of controlled) {
         cards.push({ instanceId: c.instanceId, cardName: getCardById(c.cardId)?.name ?? 'Unknown', playerName: name })
@@ -152,12 +175,25 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
     return target ? (getCardById(target.cardId)?.name ?? 'Unknown') : undefined
   }
 
-  const handlePlayFromHand = (indices: number[]) => {
-    performGameAction(gameId, playerId, { type: 'playFromHand', indices })
+  const toggleHandCard = (index: number) => {
+    setSelectedHand((prev) => {
+      const next = new Set(prev)
+      if (next.has(index)) {
+        next.delete(index)
+      } else {
+        next.add(index)
+      }
+      return next
+    })
+  }
+
+  const handlePlayFromHand = () => {
+    performGameAction(gameId, playerId, { type: 'playFromHand', indices: [...selectedHand].sort() })
+    setSelectedHand(new Set())
   }
 
   return (
-    <>
+    <Stack sx={{ flex: 1, minHeight: 0 }}>
       <GameActions
         gameId={gameId}
         playerId={playerId}
@@ -166,74 +202,145 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
         cryptSize={gameView.self.crypt.length}
         pool={gameView.self.pool}
         showImages={showImages}
-        selectedInPlayCount={selectedInPlay.size}
         onToggleImages={() => setShowImages((prev) => !prev)}
-        onTrash={handleTrash}
       />
 
-      <Stack spacing={4} sx={{ p: 2 }}>
-        <CardRow title="Cards in Play">
-          {gameView.self.libraryCardsInPlay.length === 0 && gameView.self.controlledCrypt.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              No cards in play.
+      <Stack spacing={1.5} sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: 2 }}>
+        <Accordion defaultExpanded disableGutters sx={accordionSx}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="h5">
+              In play ({gameView.self.controlledCrypt.length + gameView.self.libraryCardsInPlay.length})
             </Typography>
-          ) : (
-            <>
-              {gameView.self.libraryCardsInPlay.map((c) => (
-                <LibraryCardInPlayComponent
-                  key={c.instanceId}
-                  libraryCard={c}
-                  selected={selectedInPlay.has(c.instanceId)}
-                  showImages={showImages}
-                  targetName={resolveTargetName(c.target)}
-                  onSelect={toggleInPlay}
-                  onToggleLock={handleToggleLock}
-                  onLongPress={handleLongPressLock}
-                  onAdjustLife={handleAdjustLibraryCardLife}
-                />
-              ))}
-              {gameView.self.libraryCardsInPlay.length > 0 && gameView.self.controlledCrypt.length > 0 && (
-                <Box sx={{ width: '100%' }} />
-              )}
-              {gameView.self.controlledCrypt.map((m) => (
-                <CryptCard
-                  key={m.instanceId}
-                  controlled
-                  cryptCard={m}
-                  selected={selectedInPlay.has(m.instanceId)}
-                  showImages={showImages}
-                  targetName={resolveTargetName(m.target)}
-                  onSelect={toggleInPlay}
-                  onToggleLock={handleToggleLock}
-                  onLongPress={handleLongPressLock}
-                  onAdjustBlood={handleAdjustMinionBlood}
-                />
-              ))}
-            </>
-          )}
-        </CardRow>
+          </AccordionSummary>
+          <AccordionDetails>
+            {gameView.self.libraryCardsInPlay.length === 0 && gameView.self.controlledCrypt.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                No cards in play.
+              </Typography>
+            ) : (
+              <Stack direction="row" sx={cardRowSx}>
+                {gameView.self.libraryCardsInPlay.map((c) => (
+                  <LibraryCardInPlayComponent
+                    key={c.instanceId}
+                    libraryCard={c}
+                    selected={selectedInPlay.has(c.instanceId)}
+                    showImages={showImages}
+                    targetName={resolveTargetName(c.target)}
+                    onSelect={toggleInPlay}
+                    onToggleLock={handleToggleLock}
+                    onLongPress={handleLongPressLock}
+                    onAdjustLife={handleAdjustLibraryCardLife}
+                  />
+                ))}
+                {gameView.self.libraryCardsInPlay.length > 0 && gameView.self.controlledCrypt.length > 0 && (
+                  <Box sx={{ width: '100%' }} />
+                )}
+                {gameView.self.controlledCrypt.map((m) => (
+                  <CryptCard
+                    key={m.instanceId}
+                    controlled
+                    cryptCard={m}
+                    selected={selectedInPlay.has(m.instanceId)}
+                    showImages={showImages}
+                    targetName={resolveTargetName(m.target)}
+                    onSelect={toggleInPlay}
+                    onToggleLock={handleToggleLock}
+                    onLongPress={handleLongPressLock}
+                    onAdjustBlood={handleAdjustMinionBlood}
+                  />
+                ))}
+              </Stack>
+            )}
 
-        {gameView.self.uncontrolledCrypt.length > 0 && (
-          <CardRow
-            title="Uncontrolled"
-            sx={{ border: '1px dashed', borderColor: 'warning.main', borderRadius: 1, p: 4, paddingTop: 2 }}
-          >
-            {gameView.self.uncontrolledCrypt.map((u) => (
-              <CryptCard
-                key={u.instanceId}
-                controlled={false}
-                cryptCard={u}
-                selected={selectedInPlay.has(u.instanceId)}
-                showImages={showImages}
-                onSelect={toggleInPlay}
-                onAdjustBlood={handleAdjustUncontrolledBlood}
-              />
-            ))}
-          </CardRow>
-        )}
+            {gameView.self.uncontrolledCrypt.length > 0 && (
+              <Stack
+                direction="row"
+                sx={{
+                  ...cardRowSx,
+                  border: '1px dashed',
+                  borderColor: 'warning.main',
+                  borderRadius: 1,
+                  p: 4,
+                  pt: 2,
+                  mt: 2,
+                }}
+              >
+                {gameView.self.uncontrolledCrypt.map((u) => (
+                  <CryptCard
+                    key={u.instanceId}
+                    controlled={false}
+                    cryptCard={u}
+                    selected={selectedInPlay.has(u.instanceId)}
+                    showImages={showImages}
+                    onSelect={toggleInPlay}
+                    onAdjustBlood={handleAdjustUncontrolledBlood}
+                  />
+                ))}
+              </Stack>
+            )}
+          </AccordionDetails>
+        </Accordion>
 
-        <PlayerHand hand={gameView.self.hand} showImages={showImages} onPlay={handlePlayFromHand} />
+        <Accordion defaultExpanded disableGutters sx={accordionSx}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="h5">Hand ({gameView.self.hand.length})</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <PlayerHand
+              hand={gameView.self.hand}
+              showImages={showImages}
+              selectedHand={selectedHand}
+              onToggleHandCard={toggleHandCard}
+            />
+          </AccordionDetails>
+        </Accordion>
+
+        <Accordion disableGutters sx={accordionSx}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="h5">Ash Heap ({gameView.self.ashHeap.length})</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            {gameView.self.ashHeap.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                No cards in ash heap.
+              </Typography>
+            ) : (
+              <Stack direction="row" sx={cardRowSx}>
+                {gameView.self.ashHeap.map((cardId, index) => (
+                  <CardTile
+                    key={`${cardId}-${index}`}
+                    card={getCardById(cardId)}
+                    cardId={cardId}
+                    showImages={showImages}
+                  />
+                ))}
+              </Stack>
+            )}
+          </AccordionDetails>
+        </Accordion>
       </Stack>
+
+      <ActionBar>
+        <Button
+          variant="contained"
+          size="small"
+          disabled={selectedHand.size === 0}
+          onClick={handlePlayFromHand}
+          startIcon={<PlayArrowIcon />}
+        >
+          Play ({selectedHand.size})
+        </Button>
+        <Button
+          variant="contained"
+          color="error"
+          size="small"
+          disabled={selectedInPlay.size === 0}
+          onClick={handleTrash}
+          startIcon={<DeleteIcon />}
+        >
+          Ash ({selectedInPlay.size})
+        </Button>
+      </ActionBar>
 
       <Dialog open={longPressCard !== undefined} onClose={() => setLongPressCard(undefined)} fullWidth maxWidth="xs">
         <DialogTitle>{longPressCardName}</DialogTitle>
@@ -259,13 +366,18 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
         </DialogContent>
       </Dialog>
 
-      <Dialog open={targetPickerFor !== undefined} onClose={() => setTargetPickerFor(undefined)} fullWidth maxWidth="xs">
+      <Dialog
+        open={targetPickerFor !== undefined}
+        onClose={() => setTargetPickerFor(undefined)}
+        fullWidth
+        maxWidth="xs"
+      >
         <DialogTitle>Select Target</DialogTitle>
         <DialogContent>
           {(() => {
             const sourceCard = targetPickerFor
               ? [...gameView.self.controlledCrypt, ...gameView.self.libraryCardsInPlay].find(
-                  (c) => c.instanceId === targetPickerFor,
+                  (c) => c.instanceId === targetPickerFor
                 )
               : undefined
             const hasTarget = sourceCard?.target !== undefined
@@ -296,7 +408,7 @@ const PlayerPlayArea = ({ gameView, gameId, playerId }: PlayerPlayAreaProps) => 
           })()}
         </DialogContent>
       </Dialog>
-    </>
+    </Stack>
   )
 }
 

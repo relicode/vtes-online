@@ -263,6 +263,7 @@ const seedTestGame = async (redis: Redis, gamePlayers: { userId: string; userNam
   const pipeline = redis.pipeline()
   pipeline.set('game:test-game', JSON.stringify(game))
   pipeline.sadd('game:test-game:players', ...playerOrder)
+  pipeline.sadd('games', 'test-game')
   pipeline.del('game:test-game:log')
   for (const entry of [...logEntries].reverse()) {
     pipeline.lpush('game:test-game:log', JSON.stringify(entry))
@@ -492,6 +493,7 @@ const main = async () => {
     const userName = `Test User ${u}`
     const user: User = { id: userId, name: userName, createdAt: now }
     pipeline.set(`user:${userId}`, JSON.stringify(user))
+    pipeline.sadd('users', userId)
 
     const userDecks = deckConfigs.slice((u - 1) * 5, u * 5)
 

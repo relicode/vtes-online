@@ -18,6 +18,7 @@ const DisciplineIcon = ({ discipline, size = 16 }: DisciplineIconProps) => {
   const folder = isSuper ? 'sup' : 'inf'
 
   return (
+    // eslint-disable-next-line @next/next/no-img-element -- small static SVG icons don't benefit from next/image optimization
     <img src={`/disciplines/${folder}/${file}.svg`} alt={discipline} title={discipline} width={size} height={size} />
   )
 }
